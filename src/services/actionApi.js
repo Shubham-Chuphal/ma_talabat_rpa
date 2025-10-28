@@ -23,9 +23,9 @@ function getApiUrl(suffix, clientId = null) {
 
 async function actionApiCall(url, payload, options = {}) {
   const { storeKey, tokenMap, retryCount = 3, clientId, method = "POST" } = options;
-
+  const cookie = tokenMap?.[storeKey];
   return await requestWithCookieRenewal(
-    async (url, payload, method ,cookie) => {
+    async (url, payload, method, cookie) => {
       const axiosConfig = {
         cookieString: cookie,
         excludeHeaders: [
@@ -56,7 +56,7 @@ async function actionApiCall(url, payload, options = {}) {
       }
       return response.data;
     },
-    [url, payload, method, cookie],
+    [url, payload, method],
     { storeKey, tokenMap, retryCount, clientId }
   );
 }

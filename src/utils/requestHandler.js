@@ -58,7 +58,6 @@ function getTalabatApiHeaders(token, customHeaders = {}, options = {}) {
     accept: "application/json, text/plain, */*",
     "accept-language": "en-US,en;q=0.9",
     Authorization: authHeader,
-    "content-type": "application/json",
     origin: "https://ads.talabat.com",
     priority: "u=1, i",
     referer: "https://ads.talabat.com/",
@@ -73,6 +72,11 @@ function getTalabatApiHeaders(token, customHeaders = {}, options = {}) {
     "user-agent":
       "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
   };
+
+  // Only add content-type for non-GET requests
+  if (!options.isGetRequest) {
+    defaultHeaders["content-type"] = "application/json";
+  }
 
   // Remove headers if options.excludeHeaders is set
   if (options.excludeHeaders) {

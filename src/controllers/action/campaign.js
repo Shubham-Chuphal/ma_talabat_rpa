@@ -86,8 +86,22 @@ const campaignController = {
 
           // Step 1: Pre-fetch campaign details (optional)
           let campaignDetails = {};
-          if (typeUrl?.[action].preFetchRequired) {
-            // Choose URL based on action
+          
+          // Actions that require GET campaign details first
+          const requiresGetDetails = ["update_name", "budget", "change_date","daily_budget","cpm_bid"];
+          
+          if (requiresGetDetails.includes(action)) {
+            // Fetch full campaign details using GET
+            const getDetailsUrl = typeUrl?.campaign_details?.url?.replace(":campaign_id", campaign_id);
+            const fullDetailsUrl = getApiUrl(getDetailsUrl, clientId);
+            
+            campaignDetails = await requestWithCookieRenewal(
+              fetchCampaignDetails,
+              [fullDetailsUrl, campaign_id, "GET"], // Pass method as third argument
+              { tokenMap, storeKey, clientId }
+            );
+          } else if (typeUrl?.[action].preFetchRequired) {
+            // Legacy pre-fetch for negative keywords
             const isNegAction =
               action === "add_negative" || action === "remove_negative";
             const urlToFetch =
@@ -95,15 +109,12 @@ const campaignController = {
                 ? negative_list_url
                 : details_url;
 
-            // Use common retry + cookie renewal handler
             campaignDetails = await requestWithCookieRenewal(
-              fetchCampaignDetails, // API fn
-              [urlToFetch, campaign_id], // args for fetchCampaignDetails
-              { tokenMap, storeKey, clientId } // options needed for retry & cookie renewal
+              fetchCampaignDetails,
+              [urlToFetch, campaign_id],
+              { tokenMap, storeKey, clientId }
             );
           }
-
-          console.log("campaignDetails:", campaignDetails);
 
           // Step 2: Prepare input for payload
           const inputData = preparePayloadInput(
@@ -140,7 +151,7 @@ const campaignController = {
             clientId,
             method: httpMethod,
           });
-          
+
           // Handle success message
           results.push({
             campaign_id,
