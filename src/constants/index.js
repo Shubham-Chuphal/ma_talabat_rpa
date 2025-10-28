@@ -350,24 +350,26 @@ const ACTION_CONFIG = {
   typeSuffixUrl: {
     "product ad": {
       campaign: {
-        campaign_details: "_svc/mx-instant-api-plamanager/pla/campaign/details",
+        campaign_details: "campaigns/:campaign_id",
         negative_keyword_list:
           "_svc/mx-instant-api-plamanager/pla/campaign/negative-keyword/list",
 
         update_name: {
           preCheckUrl:
-            "_svc/mx-instant-api-plamanager/pla/campaign-name/is-exist",
+            "campaigns/:campaign_id",
           url: "_svc/mx-instant-api-plamanager/pla/campaign/update-name",
         },
         status: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign/set-is-active",
+          // url: "_svc/mx-instant-api-plamanager/pla/campaign/set-is-active",
+          url: "campaigns/:campaign_id/status",
+          method: "PATCH",
         },
         budget: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign/inline-action",
+          url: "campaigns/:campaign_id",
         },
         change_date: {
           preFetchRequired: true,
-          url: "_svc/mx-instant-api-plamanager/pla/campaign/update",
+          url: "campaigns/:campaign_id",
         },
         // For negative keywords update (add/remove computed in controller)
         add_negative: {
@@ -439,12 +441,11 @@ const ACTION_CONFIG = {
         },
 
         status: {
-          buildPayload: ({ campaignCode, isActive }) => ({
-            campaignCode,
-            isActive,
+          buildPayload: ({ status }) => ({
+            status: status ? status : null
           }),
-          message: ({ isActive, campaign_id }) =>
-            `Campaign ${campaign_id} is now ${isActive ? "Active" : "Paused"}`,
+          message: ({ status, campaign_id }) =>
+            `Campaign ${campaign_id} is now ${status ? "Active" : "Paused"}`,
         },
 
         change_date: {
@@ -483,8 +484,7 @@ const ACTION_CONFIG = {
             negativeKeywords,
           }),
           message: ({ campaignCode, negativeKeywords }) =>
-            `Updated negative keywords for campaign ${campaignCode}. New list: ${
-              Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
+            `Updated negative keywords for campaign ${campaignCode}. New list: ${Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
             }`,
         },
         remove_negative: {
@@ -493,8 +493,7 @@ const ACTION_CONFIG = {
             negativeKeywords,
           }),
           message: ({ campaignCode, negativeKeywords }) =>
-            `Updated negative keywords for campaign ${campaignCode}. New list: ${
-              Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
+            `Updated negative keywords for campaign ${campaignCode}. New list: ${Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
             }`,
         },
       },

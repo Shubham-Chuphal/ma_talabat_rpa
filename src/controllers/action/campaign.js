@@ -66,9 +66,14 @@ const campaignController = {
           }
           const typeUrl = actionConfig.typeSuffixUrl[typeKey]?.["campaign"];
           // console.log("typeUrl:", typeUrl);
-          const action_url = getApiUrl(typeUrl?.[action]?.url);
-          const details_url = getApiUrl(typeUrl?.campaign_details);
-          const negative_list_url = getApiUrl(typeUrl?.negative_keyword_list);
+          
+          // Replace :campaign_id placeholder in URL if present
+          let actionUrlSuffix = typeUrl?.[action]?.url || "";
+          actionUrlSuffix = actionUrlSuffix.replace(":campaign_id", campaign_id);
+          
+          const action_url = getApiUrl(actionUrlSuffix, clientId);
+          const details_url = getApiUrl(typeUrl?.campaign_details, clientId);
+          const negative_list_url = getApiUrl(typeUrl?.negative_keyword_list, clientId);
 
           const payloadFn =
             actionConfig.payloadTemplates[typeKey]?.["campaign"]?.[action];
@@ -126,14 +131,17 @@ const campaignController = {
           // Step 4: Generate payload
           const payload = payloadFn?.buildPayload(inputData);
           // console.log("payload:,", payload);
+          
           // Step 5: Call API
+          const httpMethod = typeUrl?.[action]?.method || "POST";
           await actionApiCall(action_url, payload, {
             storeKey,
             tokenMap,
             clientId,
+            method: httpMethod,
           });
+          
           // Handle success message
-
           results.push({
             campaign_id,
             success: true,

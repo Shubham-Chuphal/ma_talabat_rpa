@@ -44,7 +44,7 @@ const preparePayloadInput = (
     case "status":
       return {
         campaignCode: campaign_id,
-        isActive: value === "enable",
+        status: value,
       };
 
     case "change_date":

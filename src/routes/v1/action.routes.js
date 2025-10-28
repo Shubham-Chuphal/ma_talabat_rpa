@@ -8,12 +8,12 @@ const keywordController = require("../../controllers/action/keyword");
 const productController = require("../../controllers/action/product");
 
 // Campaign routes
-router.route("/campaign/edit").post(authCheck, campaignController.editCampaign);
+router.route("/campaign/edit").post( campaignController.editCampaign);
 
 // Keyword routes
-router.route("/keyword/edit").post(authCheck, keywordController.editKeyword);
+router.route("/keyword/edit").post( keywordController.editKeyword);
 
 // Product routes
-router.route("/product/edit").post(authCheck, productController.editProduct);
+router.route("/product/edit").post( productController.editProduct);
 
 module.exports = router;
