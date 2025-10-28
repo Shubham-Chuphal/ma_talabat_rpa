@@ -31,38 +31,38 @@ axiosInstance.interceptors.request.use(
         }
       }
       // For Printing curl
-      function toQueryString(params) {
-        return Object.entries(params)
-          .map(
-            ([key, value]) =>
-              `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-          )
-          .join("&");
-      }
-      let url = config.url;
-      if (config.params && Object.keys(config.params).length > 0) {
-        const qs = toQueryString(config.params);
-        url += (url.includes("?") ? "&" : "?") + qs;
-      }
-      const method = (config.method || "POST").toUpperCase();
-      let curl = [`curl -X ${method} '${url}'`];
-      for (const [key, value] of Object.entries(config.headers || {})) {
-        if (value !== undefined && value !== null) {
-          curl.push(`-H '${key}: ${value}'`);
-        }
-      }
-      if (config.data) {
-        const body =
-          typeof config.data === "string"
-            ? config.data
-            : JSON.stringify(config.data);
-        curl.push(`-d '${body}'`);
-      }
-      // Use logger if provided, otherwise fallback
-      if (typeof config.logger === "function") {
-        config.logger(curl.join(" \\\n   ") + "\n\n");
-        delete config.logger;
-      }
+      // function toQueryString(params) {
+      //   return Object.entries(params)
+      //     .map(
+      //       ([key, value]) =>
+      //         `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+      //     )
+      //     .join("&");
+      // }
+      // let url = config.url;
+      // if (config.params && Object.keys(config.params).length > 0) {
+      //   const qs = toQueryString(config.params);
+      //   url += (url.includes("?") ? "&" : "?") + qs;
+      // }
+      // const method = (config.method || "POST").toUpperCase();
+      // let curl = [`curl -X ${method} '${url}'`];
+      // for (const [key, value] of Object.entries(config.headers || {})) {
+      //   if (value !== undefined && value !== null) {
+      //     curl.push(`-H '${key}: ${value}'`);
+      //   }
+      // }
+      // if (config.data) {
+      //   const body =
+      //     typeof config.data === "string"
+      //       ? config.data
+      //       : JSON.stringify(config.data);
+      //   curl.push(`-d '${body}'`);
+      // }
+      // // Use logger if provided, otherwise fallback
+      // if (typeof config.logger === "function") {
+      //   config.logger(curl.join(" \\\n   ") + "\n\n");
+      //   delete config.logger;
+      // }
       delete config.cookieString;
       delete config.excludeHeaders;
     }

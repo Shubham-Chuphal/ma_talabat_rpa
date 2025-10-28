@@ -132,15 +132,48 @@ exports.campaignStructure = async (req, res) => {
     }
 
     await pgClientDb.transaction(async (transaction) => {
-      for (const { model, key } of entityInsertMap) {
+      for (const { model, key, deleteWhere } of entityInsertMap) {
         const rows = flattenByKey(campaign_details.results, key);
         logger(`Inserting ${rows.length} rows into ${model}...`);
+
+        // Build conditional delete for products/keywords where status is 'active' or NULL, scoped to relevant account_ids
+        let conditionalWhere = undefined;
+        if (rows.length > 0) {
+          if (typeof deleteWhere === "function") {
+            try {
+              conditionalWhere = deleteWhere({ rows, db: pgClientDb });
+              if (conditionalWhere) {
+                logger(`[CONFIG] Using deleteWhere for ${model}`);
+              }
+            } catch (e) {
+              logger(`[CONFIG][deleteWhere][ERROR] ${e.message}`);
+            }
+          }
+
+          // Fallback logic if no deleteWhere provided in config
+          if (!conditionalWhere && (model === "talabat_products" || model === "talabat_keywords")) {
+            const accountIds = Array.from(new Set(rows.map((r) => r.account_id).filter(Boolean)));
+            if (accountIds.length > 0) {
+              conditionalWhere = {
+                [pgClientDb.Op.and]: [
+                  { account_id: { [pgClientDb.Op.in]: accountIds } },
+                  { [pgClientDb.Op.or]: [{ status: "active" }, { status: null }] },
+                ],
+              };
+              logger(
+                `Applying conditional delete on ${model} for ${accountIds.length} account(s) where status in ('active', NULL)`
+              );
+            }
+          }
+        }
+
         if (rows.length > 0) {
           await insertDataWithDeletion({
             db: pgClientDb,
             modelName: model,
             rows,
             transaction,
+            where: conditionalWhere,
             logger,
           });
         } else {

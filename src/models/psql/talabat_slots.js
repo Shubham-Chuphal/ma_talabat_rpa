@@ -1,18 +1,15 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const talabat_keywords = sequelize.define(
-    "talabat_keywords",
+  const talabat_slots = sequelize.define(
+    "talabat_slots",
     {
       id: {
         type: DataTypes.BIGINT,
         primaryKey: true,
         autoIncrement: true,
       },
-      keyword: {
-        type: DataTypes.STRING, // targetValue
-      },
-      status: {
+      slot: {
         type: DataTypes.STRING,
       },
       campaign_id: {
@@ -30,19 +27,17 @@ module.exports = (sequelize) => {
       campaign_type: {
         type: DataTypes.STRING,
       },
-      ad_type: {
-        type: DataTypes.STRING,
-      },
+
       updated_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
     },
     {
-      tableName: "talabat_keywords",
-      timestamps: false, // already handled with default value in schema
+      tableName: "talabat_slots",
+      timestamps: false,
     }
   );
 
-  return talabat_keywords;
+  return talabat_slots;
 };

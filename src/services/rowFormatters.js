@@ -5,10 +5,15 @@ function formatCampaignRow(row, brandLookup, cookieKey, existingData, adType) {
   const brand_name = brandLookup[cookieKey];
   // Prefer new API fields, fallback to old
   const campaign_id = row.id || row.campaignCode || row.campaign_id || null;
-  const campaign_name = row.name || row.campaignName || row.campaign_name || null;
+  const campaign_name =
+    row.name || row.campaignName || row.campaign_name || null;
   const start_date = row.start_date || row.localStartDate || null;
   const end_date = row.end_date || row.localEndDate || null;
-  const ad_type = row.ad_type || (Array.isArray(row.ad_types) ? row.ad_types[0] : null) || row.type || null;
+  const ad_type =
+    row.ad_type ||
+    (Array.isArray(row.ad_types) ? row.ad_types[0] : null) ||
+    row.type ||
+    null;
   const pricing_model = row.pricing_model || null;
   const budget =
     row.budget != null
@@ -41,8 +46,10 @@ function formatProductRow(row) {
   const campaign = row.campaign || {};
   return {
     product_name: row.name || row.productName || null,
-    product_id: row.master_product_code || row.id || row.sku || row.product_id || null,
+    product_id:
+      row.master_product_code || row.id || row.sku || row.product_id || null,
     image: row.image_url || row.image || null,
+    status: "active",
     account: campaign.account || null,
     account_id: campaign.account_id || null,
     campaign_id: campaign.campaign_id || null,
@@ -76,6 +83,7 @@ function formatKeywordRow(row) {
   return {
     // Map to talabat_keywords model
     keyword: row.keyword || row.targetValue || null,
+    status: "active",
     campaign_id: campaign.campaign_id || null,
     campaign_name: campaign.campaign_name || null,
     account: campaign.account || null,
@@ -90,8 +98,7 @@ function formatKeywordRow(row) {
 function formatSlotRow(row) {
   const campaign = row.campaign || {};
   return {
-    source: row.source || null,
-    deeplink: row.deeplink || null,
+    slot: row.slot || null,
     campaign_id: campaign.campaign_id || null,
     campaign_name: campaign.campaign_name || null,
     campaign_type: campaign.campaign_type,
@@ -113,14 +120,25 @@ function formatCampaignAttributionRow(
   created_on
 ) {
   const brand_name = brandLookup[cookieKey];
-  return {
-    // DB columns mapped from Talabat API fields
-    campaign_id: row.campaignCode,
-    campaign_name: row.campaignName,
-    campaign_type: adType,
-    campaign_sub_type: row.type || null,
+  // Prefer new API fields, fallback to old
+  const campaign_id = row.id || row.campaignCode || row.campaign_id || null;
+  const campaign_name =
+    row.name || row.campaignName || row.campaign_name || null;
+  const ad_type =
+    row.ad_type ||
+    (Array.isArray(row.ad_types) ? row.ad_types[0] : null) ||
+    row.type ||
+    null;
+  const p = row.performance || {};
 
-    // Account fields
+  return {
+    // Identity
+    campaign_id,
+    campaign_name,
+    campaign_type: adType,
+    ad_type,
+
+    // Account
     account_id: cookieKey,
     account: brand_name,
 
@@ -128,37 +146,33 @@ function formatCampaignAttributionRow(
     created_on,
 
     // Metrics
-    views: row.views || 0,
-    clicks: row.clicks || 0,
-    revenue: row.revenue || 0,
-    spends: row.spends || 0,
-    orders: row.orders || 0,
-    missed_revenue: row.missedRevenue,
-    avg_time_in_budget: row.avgTimeInBudget,
-    avg_budget_utilization: row.avgBudgetUtilization,
+    clicks: p.clicks || 0,
+    impressions: p.impressions || 0,
+    orders: p.orders || 0,
+    sales: p.sales_revenue || 0,
+    spend: p.total_ad_spend || 0,
+    unit_sold: p.unit_sold || 0,
 
-    // Metadata
+    // Meta
     formatted: true,
     entityType: "Campaign",
   };
 }
 
 function formatProductAttributionRow(row, created_on) {
-  // Use campaign context if present
   const campaign = row.campaign || {};
-
+  const p = row.performance || {};
   return {
     // Product fields
-    product_name: row.productName || null,
-    product_id: row.sku || row.product_id || null,
-    product_brand: row.brand || null,
-    image: row.image || null,
+    product_name: row.name || row.productName || null,
+    product_id:
+      row.master_product_code || row.id || row.sku || row.product_id || null,
 
     // Campaign fields
     campaign_id: campaign.campaign_id || null,
     campaign_name: campaign.campaign_name || null,
     campaign_type: campaign.campaign_type || null,
-    campaign_sub_type: campaign.campaign_sub_type || null,
+    ad_type: campaign.ad_type || null,
 
     // Account fields
     account_id: campaign.account_id || null,
@@ -168,64 +182,32 @@ function formatProductAttributionRow(row, created_on) {
     created_on,
 
     // Metrics
-    views: row.views || 0,
-    clicks: row.clicks || 0,
-    revenue: row.revenue || 0,
-    spends: row.spends || 0,
-    orders: row.orders || 0,
+    clicks: p.clicks || 0,
+    impressions: p.impressions || 0,
+    orders: p.orders || 0,
+    sales: p.sales_revenue || 0,
+    spend: p.total_ad_spend || 0,
+    unit_sold: p.unit_sold || 0,
 
-    // Metadata
+    // Meta
     formatted: true,
     entityType: "Product",
   };
 }
 
-function formatKeywordAttributionRow(row, created_on) {
-  const campaign = row.campaign || {};
-
-  return {
-    // Targeting fields
-    target: row.targetValue || null,
-    target_type: row.targetType || null,
-    description: row.targetDescription || null,
-
-    // Campaign fields
-    campaign_id: campaign.campaign_id || null,
-    campaign_name: campaign.campaign_name || null,
-    campaign_type: campaign.campaign_type || null,
-    campaign_sub_type: campaign.campaign_sub_type || null,
-
-    // Account fields
-    account_id: campaign.account_id || null,
-    account: campaign.account || null,
-
-    // Dates
-    created_on,
-
-    // Metrics
-    views: row.views || 0,
-    clicks: row.clicks || 0,
-    revenue: row.revenue || 0,
-    spends: row.spends || 0,
-    orders: row.orders || 0,
-
-    // Metadata
-    formatted: true,
-    entityType: "Keyword",
-  };
-}
-
 function formatCategoryAttributionRow(row, created_on) {
   const campaign = row.campaign || {};
+  const p = row.performance || {};
   return {
-    // Placement field
-    placement: row.slotPlacement || row.placement || null,
+    // Placement fields
+    category: row.name || row.slotPlacement || row.placement || null,
+    category_id: row.id || null,
 
     // Campaign fields
     campaign_id: campaign.campaign_id || null,
     campaign_name: campaign.campaign_name || null,
     campaign_type: campaign.campaign_type || null,
-    campaign_sub_type: campaign.campaign_sub_type || null,
+    ad_type: campaign.ad_type || null,
 
     // Account fields
     account_id: campaign.account_id || null,
@@ -235,30 +217,31 @@ function formatCategoryAttributionRow(row, created_on) {
     created_on,
 
     // Metrics
-    views: row.views || 0,
-    clicks: row.clicks || 0,
-    revenue: row.revenue || 0,
-    spends: row.spends || 0,
-    orders: row.orders || 0,
+    clicks: p.clicks || 0,
+    impressions: p.impressions || 0,
+    orders: p.orders || 0,
+    sales: p.sales_revenue || 0,
+    spend: p.total_ad_spend || 0,
+    unit_sold: p.unit_sold || 0,
 
-    // Metadata
+    // Meta
     formatted: true,
     entityType: "Category",
   };
 }
 
-function formatSlotAttributionRow(row, created_on) {
+function formatKeywordAttributionRow(row, created_on) {
   const campaign = row.campaign || {};
-
+  const p = row.performance || {};
   return {
-    // Source fields
-    source: row.source || null,
-    deeplink: row.deeplink || null,
+    // Targeting fields
+    keyword: row.keyword || row.targetValue || null,
 
     // Campaign fields
     campaign_id: campaign.campaign_id || null,
     campaign_name: campaign.campaign_name || null,
     campaign_type: campaign.campaign_type || null,
+    ad_type: campaign.ad_type || null,
 
     // Account fields
     account_id: campaign.account_id || null,
@@ -268,14 +251,48 @@ function formatSlotAttributionRow(row, created_on) {
     created_on,
 
     // Metrics
-    orders: row.orders || 0,
-    unit_sales: row.unitsSales || 0, // Note: unitsSales (camelCase) from API
-    revenue: row.revenue || 0,
-    sessions: row.sessions || 0,
-    visitors: row.visitors || 0,
-    conversion_rate: row.conversionRate || 0, // Note: conversionRate (camelCase) from API
+    clicks: p.clicks || 0,
+    impressions: p.impressions || 0,
+    orders: p.orders || 0,
+    sales: p.sales_revenue || 0,
+    spend: p.total_ad_spend || 0,
+    unit_sold: p.unit_sold || 0,
 
-    // Metadata
+    // Meta
+    formatted: true,
+    entityType: "Keyword",
+  };
+}
+
+function formatSlotAttributionRow(row, created_on) {
+  const campaign = row.campaign || {};
+  const p = row.performance || {};
+  return {
+    // Slot
+    slot: row.slot || null,
+
+    // Campaign fields
+    campaign_id: campaign.campaign_id || null,
+    campaign_name: campaign.campaign_name || null,
+    campaign_type: campaign.campaign_type || null,
+    ad_type: campaign.ad_type || null,
+
+    // Account fields
+    account_id: campaign.account_id || null,
+    account: campaign.account || null,
+
+    // Dates
+    created_on,
+
+    // Metrics
+    clicks: p.clicks || 0,
+    impressions: p.impressions || 0,
+    orders: p.orders || 0,
+    sales: p.sales_revenue || 0,
+    spend: p.total_ad_spend || 0,
+    unit_sold: p.unit_sold || 0,
+
+    // Meta
     formatted: true,
     entityType: "Slot",
   };

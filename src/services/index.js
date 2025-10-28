@@ -28,7 +28,7 @@ function getEntityInsertMapFromConfig(CONFIG) {
     for (const config of adTypeObj[adType]) {
       // Main campaign entity
       if (config.model) {
-        map.push({ model: config.model, key: "campaigns" });
+        map.push({ model: config.model, key: "campaigns", deleteWhere: config.deleteWhere });
       }
       // Other entities
       if (config.otherFetch) {
@@ -38,6 +38,7 @@ function getEntityInsertMapFromConfig(CONFIG) {
             map.push({
               model: fetchConf.model,
               key: fetchConf.outputKey,
+              deleteWhere: fetchConf.deleteWhere,
             });
           }
         }
