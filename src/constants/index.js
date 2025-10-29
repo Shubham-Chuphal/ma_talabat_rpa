@@ -576,14 +576,42 @@ const ACTION_CONFIG = {
 
       product: {
         enable: {
-          buildPayload: ({ campaignCode, sku }) => ({ campaignCode, sku }),
-          message: ({ sku, campaignCode }) =>
-            `SKU ${sku} enabled successfully for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              sku: payload.sku,
+            };
+          },
+          message: ({ productsList, productCount, searchTerm }) => {
+            if (productCount > 1) {
+              return `${productCount} products enabled: "${productsList}" (searched: "${searchTerm}")`;
+            }
+            return `Product "${productsList}" enabled (searched: "${searchTerm}")`;
+          },
         },
         disable: {
-          buildPayload: ({ campaignCode, sku }) => ({ campaignCode, sku }),
-          message: ({ sku, campaignCode }) =>
-            `SKU ${sku} disabled successfully for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              sku: payload.sku,
+            };
+          },
+          message: ({ productsList, productCount, searchTerm }) => {
+            if (productCount > 1) {
+              return `${productCount} products disabled: "${productsList}" (searched: "${searchTerm}")`;
+            }
+            return `Product "${productsList}" disabled (searched: "${searchTerm}")`;
+          },
         },
       },
 

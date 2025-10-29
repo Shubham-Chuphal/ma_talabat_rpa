@@ -2,28 +2,26 @@ const { getApiUrl, actionApiCall } = require("../../services/actionApi");
 const { fetchTalabatTokenArray } = require("../../utils/getCookies");
 const { getConnectedDatabases } = require("../../db/connect");
 const { ACTION_CONFIG } = require("../../constants");
+const { fetchCampaignDetails, prepareProductPayloadInput } = require("../../services/action/campaign/config_api");
+const { requestWithCookieRenewal } = require("../../utils/requestHandler");
+
 const productController = {
   editProduct: async (req, res) => {
     try {
-      let { products, platformId = "9" } = req.body;
       const clientId = req.body.clientId || req.query.clientId;
+      let { products, platformId } = req.body;
+      const items = products;
 
-      if (!clientId) {
-        throw new Error("Missing required clientId in request");
+      if (!clientId) throw new Error("Missing required clientId in request");
+      if (!Array.isArray(items) || items.length === 0) {
+        throw new Error("products must be a non-empty array");
       }
 
-      if (!Array.isArray(products) || products.length === 0) {
-        throw new Error("Products must be a non-empty array");
-      }
       const actionConfig = ACTION_CONFIG;
-      // Connect to DB
       const { commonDB: pgCommonDB } = await getConnectedDatabases(clientId);
-      if (!pgCommonDB) {
-        throw new Error("Common DB connection not available");
-      }
+      if (!pgCommonDB) throw new Error("Common DB connection not available");
 
-      // Fetch authentication tokens for Talabat API
-      let cookiesArray = await fetchTalabatTokenArray({
+      const cookiesArray = await fetchTalabatTokenArray({
         clientId,
         platformId,
         commonDB: pgCommonDB,
@@ -34,16 +32,26 @@ const productController = {
         acc[store.toLowerCase()] = cookie;
         return acc;
       }, {});
+
       const results = [];
 
-      for (const item of products) {
+      for (const item of items) {
         try {
-          const { campaign_id, product_id, account_id, action, campaign_type } =
-            item || {};
-          if (!campaign_id || !product_id || !action) {
-            throw new Error(
-              "Each item must include campaign_id, product_id and action"
-            );
+          const {
+            campaign_id,
+            product_search_term,
+            account_id,
+            action,
+            campaign_type,
+            entity = "TB_AE",
+          } = item || {};
+
+          if (!campaign_id || !action) {
+            throw new Error("Each item must include campaign_id and action");
+          }
+
+          if (!product_search_term) {
+            throw new Error("product_search_term is required for product actions");
           }
 
           const typeKey = (campaign_type || "product ad").toLowerCase().trim();
@@ -51,7 +59,7 @@ const productController = {
           const actionKey = String(action).toLowerCase().trim();
 
           const allowedForType =
-            ACTION_CONFIG.allowedActions[typeKey]?.product || [];
+            actionConfig.allowedActions[typeKey]?.product || [];
           if (!allowedForType.includes(actionKey)) {
             throw new Error(
               `Action '${actionKey}' is not allowed for product type '${typeKey}'`
@@ -59,45 +67,87 @@ const productController = {
           }
 
           const typeUrl = actionConfig.typeSuffixUrl[typeKey]?.["product"];
-          const action_url = getApiUrl(typeUrl?.[actionKey]?.url);
+          const campaignTypeUrl = actionConfig.typeSuffixUrl[typeKey]?.["campaign"];
+          
+          // Replace :campaign_id placeholder in URL
+          let actionUrlSuffix = typeUrl?.[actionKey]?.url || "";
+          actionUrlSuffix = actionUrlSuffix.replace(":campaign_id", campaign_id);
+          
+          const action_url = getApiUrl(actionUrlSuffix, clientId);
           const payloadFn =
             actionConfig.payloadTemplates[typeKey]?.["product"]?.[actionKey];
-
-          if (!typeUrl || !payloadFn || !action_url) {
+          if (!typeUrl || !payloadFn) {
             throw new Error(
               `Unsupported action: ${typeKey}/product/${actionKey}`
             );
           }
 
-          const inputData = { campaignCode: campaign_id, sku: product_id };
-          const payload = payloadFn.buildPayload(inputData);
+          // Step 1: Fetch campaign details using GET
+          const getDetailsUrl = campaignTypeUrl?.campaign_details?.url?.replace(":campaign_id", campaign_id);
+          const fullDetailsUrl = getApiUrl(getDetailsUrl, clientId);
+          
+          const campaignDetails = await requestWithCookieRenewal(
+            fetchCampaignDetails,
+            [fullDetailsUrl, campaign_id, "GET"],
+            { tokenMap, storeKey, clientId }
+          );
 
-          // Call Talabat API with cookie renewal + retries
+          // Extract vendor_ids from campaign details
+          const vendorIds = campaignDetails.data?.promotion?.vendor_ids || [];
+
+          // Get the cookie for product search
+          const cookie = tokenMap[storeKey];
+
+          // Step 2: Search for products and prepare payload
+          const inputData = await prepareProductPayloadInput(
+            actionKey,
+            campaign_id,
+            product_search_term,
+            campaignDetails,
+            vendorIds,
+            entity,
+            cookie
+          );
+          
+          const payload = payloadFn.buildPayload(inputData);
+          
+          // Step 3: Call PUT API with modified payload
+          const httpMethod = typeUrl?.[actionKey]?.method || "PUT";
           const response = await actionApiCall(action_url, payload, {
             storeKey,
             tokenMap,
             clientId,
+            method: httpMethod,
           });
 
+          // Format message
+          const productsList = inputData.foundProducts
+            .map(p => p.master_code)
+            .join(", ");
+          
+          const productCount = inputData.productCount || 0;
+          
           results.push({
             campaign_id,
-            product_id,
+            searchTerm: product_search_term,
+            foundProducts: inputData.foundProducts,
+            productCount,
             success: true,
             message: payloadFn?.message
-              ? payloadFn.message({ ...inputData })
-              : `Action "${actionKey}" completed for SKU ${product_id} in campaign ${campaign_id}`,
+              ? payloadFn.message({ ...inputData, productsList, productCount })
+              : `Action "${actionKey}" completed for ${productCount} product(s): "${productsList}" in campaign ${campaign_id}`,
             action: actionKey,
             data: response,
           });
         } catch (err) {
           results.push({
-            campaignCode: item?.campaign_id,
-            product_id: item?.product_id,
+            campaign_id: item?.campaign_id,
+            searchTerm: item?.product_search_term,
             success: false,
             message: getErrorMessage({
               action: String(item?.action || "").toLowerCase(),
               campaignCode: item?.campaign_id,
-              product_id: item?.product_id,
+              searchTerm: item?.product_search_term,
               error: err,
             }),
           });
@@ -106,22 +156,22 @@ const productController = {
 
       res.json({
         success: true,
-        message: "Bulk product actions completed",
+        message: "product actions completed",
         data: results,
       });
     } catch (error) {
-      console.error("Error in editProduct controller:", error);
+      console.error("Error in editProduct:", error);
       res.status(500).json({
         success: false,
-        message: "Error performing product actions",
+        message: "Error performing product operations",
         error: error.message,
       });
     }
   },
 };
 
-function getErrorMessage({ action, campaignCode, product_id, error }) {
-  return `❌ Action "${action}" failed for SKU "${product_id}" in campaign "${campaignCode}". Error: ${error}`;
+function getErrorMessage({ action, campaignCode, searchTerm, error }) {
+  return `❌ Action "${action}" failed for search term "${searchTerm}" in campaign "${campaignCode}". Error: ${error?.message || error}`;
 }
 
 module.exports = productController;

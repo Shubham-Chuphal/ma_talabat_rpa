@@ -2,7 +2,7 @@ const axiosInstance = require("../../../utils/axiosInstance");
 
 async function fetchCampaignDetails(url, campaignCode, method = "POST", cookie) {
   let response;
-  const cookie1 = 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYxNzAxNzI2LCJpYXQiOjE3NjE2OTgxMjYsImp0aSI6ImFmMjI2MG91MjJoMTRydGp1YmRoN3QxenB6ejVxenNjNXkzbXZnYm0iLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.G1Yq6I7I6c2x0DNLlAh1748GTM5C6cJWsb-JIroIgtA5rP186P-UY97Vd-OOws0c3JKzdM9rtU2SvMbl2TpYwoMk9zmRiA8tG0JPiXZriLjm3uZPCj5Gsato-1zG1HVwv1qRIODYoVOd2DFAEh993vO4zkjyRAaAfqm_WA6rWNy6_ChbU3fJLNThYYE2qY_z-bud5mgIdRVNzfxk9Ii2cyDWFRyf_2Vu-z-PHR59RlL-ElpfP32G6qw24KckRv85m_LGijfIIJfkCbi6DvYLUEFqLvq3eg_3_YW1q8oIh31WQqeZ8aTGb7gVWUZxVF6U2N3uGvebPihQYzC3xP5ClA'
+  const cookie1 = 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYxNzczOTAzLCJpYXQiOjE3NjE3NzAzMDMsImp0aSI6Ind0eXIxcTB0ODdseDR1ZnB1ZjV4am55MDVvdHVpaWo1ejBoamJibXYiLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.Te7E-WOLgdNTjCN3ikYEb95dHLnNPZWD6BMwFIkcspvesmuWfYSQj81JdfKd8gTnCx2pNHjXnGR_p9mBuareqxQiLiKMSyczmXKB-ny-Bv1aUixxlUDr8qzgNwL6-X7aFuaEVapfxC-wuN19QC7-y_-Hx2GqX0TUZIDsnoSbQmC9wntOyZCnrSaLtyW9-pKtdk90eG2kd4mxTunaVngkSW4wYzAhWXs96IMGTZ1Ix1tF16TZQc0RDup3aNFy22ZWQngg95mhR9C-nkiO8LiGaOtvy1Z0aG-na2HEaq0xV_XiXTWwbOamhPIkF5uSPiiBCQ908PTL4ldeZJN4fJvfHw'
   if (method === "GET") {
     // For GET requests, campaign_id is already in the URL
     response = await axiosInstance.get(url, {
@@ -226,13 +226,13 @@ function prepareKeywordPayloadInput(
   if (!campaignDetails.data) {
     throw new Error("Campaign details are required for keyword actions");
   }
-
+  
   const campaignData = campaignDetails.data;
   const existingKeywords = campaignData.promotion?.search?.keywords || [];
-  
+
   // Normalize targetValue to array for consistent processing
   const targetKeywords = Array.isArray(targetValue) ? targetValue : [targetValue];
-  
+
   let updatedKeywords = [...existingKeywords];
   const existingKeywordsLower = new Set(
     existingKeywords.map(kw => String(kw).toLowerCase().trim())
@@ -281,7 +281,7 @@ function prepareKeywordPayloadInput(
     name: campaignData.name,
     status: campaignData.status,
     start_at: campaignData.start_at,
-    end_at: campaignData.end_at,
+    ...(campaignData.end_at ? { end_at: campaignData.end_at } : {}),
     promotion: {
       vendor_ids: campaignData.promotion?.vendor_ids || [],
       chain_ids: campaignData.promotion?.chain_ids || [],
@@ -296,8 +296,10 @@ function prepareKeywordPayloadInput(
     pricing: {
       budget: {
         total: campaignData.pricing?.budget?.total,
-        daily: campaignData.pricing?.budget?.daily,
         consumed: campaignData.pricing?.budget?.consumed || 0,
+        ...(campaignData.pricing?.budget?.daily
+            ? { daily: campaignData.pricing.budget.daily }
+            : {}),
       },
       default_bid: campaignData.pricing?.default_bid || 0,
       is_free: campaignData.pricing?.is_free || false,
@@ -310,7 +312,8 @@ function prepareKeywordPayloadInput(
           is_all_day: true,
         },
       ],
-      placements: campaignData.targeting?.placements || [],
+      placements:
+        campaignData.targeting?.placements?.map(({ ad_type, ...rest }) => rest) || [],
     },
     creatives: campaignData.creatives || [],
   };
@@ -320,7 +323,7 @@ function prepareKeywordPayloadInput(
     // Process each keyword for bid updates
     targetKeywords.forEach(keyword => {
       const keywordLower = String(keyword).toLowerCase().trim();
-      
+
       // Find existing custom bid for this keyword
       const existingBidIndex = payload.pricing.custom_bids.findIndex(
         cb => String(cb.search_keyword).toLowerCase().trim() === keywordLower
@@ -342,15 +345,183 @@ function prepareKeywordPayloadInput(
     });
   }
 
-  return {
-    ...payload,
-    // targetType,
-    // targetValue: Array.isArray(targetValue) ? targetValue : targetValue,
-    // bid,
-    // campaignCode: campaign_id,
-    // processedKeywords: targetKeywords, // For logging/debugging
-  };
+  return payload;
 }
+
+/**
+ * Search for products using the Talabat product search API
+ * @param {string} searchTerm - The product name to search for
+ * @param {string} entity - The entity code (e.g., "TB_AE")
+ * @param {string} cookie - Authentication cookie
+ * @returns {Promise<Array>} - Array of matching products
+ */
+async function searchProducts(searchTerm, entity = "TB_AE", cookie, vendorIds) {
+  try {
+    const encodedSearchTerm = encodeURIComponent(searchTerm);
+    const data = {
+      vendor_ids: vendorIds,
+      by: "TERM",
+    };
+
+    console.log(data, "data");
+    const cookie1 = "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYxNzczOTAzLCJpYXQiOjE3NjE3NzAzMDMsImp0aSI6Ind0eXIxcTB0ODdseDR1ZnB1ZjV4am55MDVvdHVpaWo1ejBoamJibXYiLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.Te7E-WOLgdNTjCN3ikYEb95dHLnNPZWD6BMwFIkcspvesmuWfYSQj81JdfKd8gTnCx2pNHjXnGR_p9mBuareqxQiLiKMSyczmXKB-ny-Bv1aUixxlUDr8qzgNwL6-X7aFuaEVapfxC-wuN19QC7-y_-Hx2GqX0TUZIDsnoSbQmC9wntOyZCnrSaLtyW9-pKtdk90eG2kd4mxTunaVngkSW4wYzAhWXs96IMGTZ1Ix1tF16TZQc0RDup3aNFy22ZWQngg95mhR9C-nkiO8LiGaOtvy1Z0aG-na2HEaq0xV_XiXTWwbOamhPIkF5uSPiiBCQ908PTL4ldeZJN4fJvfHw"
+    const url = `https://qcat-dsp-me.deliveryhero.io/api/v1/entities/${entity}/products?page=0&size=10&search_term=${encodedSearchTerm}`;
+    console.log("Product search URL:", url);
+
+    const response = await axiosInstance.post(url, data, {
+      cookieString: cookie1,
+    });
+
+    console.log("Product search response:", response.data);
+    return response.data?.data || [];
+  } catch (error) {
+    console.error("Error in searchProducts:", error.message);
+    console.error("Error details:", error.response?.data || error);
+    throw new Error(`Product search failed: ${error.message}`);
+  }
+}
+
+
+/**
+ * Prepare payload input for product actions (enable, disable)
+ * Searches for products, extracts master_code and category_group_ids, and adds to campaign
+ * @param {string} action - The action to perform (enable, disable)
+ * @param {string} campaign_id - Campaign ID
+ * @param {string} searchTerm - Product search term
+ * @param {Object} campaignDetails - Campaign details from GET API
+ * @param {Array} vendorIds - Vendor IDs to filter products (from campaign details)
+ * @param {string} entity - Entity code (e.g., "TB_AE")
+ * @param {string} cookie - Authentication cookie
+ * @returns {Promise<Object>} - Complete campaign payload with updated products
+ */
+async function prepareProductPayloadInput(
+  action,
+  campaign_id,
+  searchTerm,
+  campaignDetails = {},
+  vendorIds = [],
+  entity = "TB_AE",
+  cookie
+) {
+  try {
+    if (!campaignDetails.data) {
+      throw new Error("Campaign details are required for product actions");
+    }
+
+    const campaignData = campaignDetails.data;
+    console.log("Campaign vendor_ids:", vendorIds);
+
+    // Step 1: Search for products using the search API
+    const searchResults = await searchProducts(searchTerm, entity, cookie, vendorIds);
+    console.log(`Found ${searchResults.length} products from search`);
+
+    if (!searchResults || searchResults.length === 0) {
+      throw new Error(`No products found for search term: "${searchTerm}"`);
+    }
+
+    // Step 2: Filter products whose names exactly match the search term
+    const filteredProducts = searchResults.filter(
+      (product) => product.name.toLowerCase() === searchTerm.toLowerCase()
+    );
+
+    console.log(`Filtered to ${filteredProducts.length} exact matching products`);
+
+    if (filteredProducts.length === 0) {
+      throw new Error(`No products found matching the search term: "${searchTerm}"`);
+    }
+
+    // Step 3: Extract only master_code and category_group_ids
+    const newProducts = filteredProducts.map((product) => ({
+      master_code: product.master_product_code,
+      category_group_ids: product.category_group_ids || [],
+    }));
+
+    console.log("Extracted products:", newProducts);
+
+    // Step 4: Normalize existing products (keep only required fields)
+    const existingProducts =
+      (campaignData.promotion?.products || []).map((p) => ({
+        master_code: p.master_code,
+        category_group_ids: p.category_group_ids || [],
+      })) || [];
+
+    // Step 5: Merge products based on action
+    let updatedProducts = [...existingProducts];
+
+    switch (action) {
+      case "enable": {
+        const existingMasterCodes = new Set(existingProducts.map((p) => p.master_code));
+        newProducts.forEach((newProduct) => {
+          if (!existingMasterCodes.has(newProduct.master_code)) {
+            updatedProducts.push(newProduct);
+          } else {
+            throw new Error(
+              `Product with master_code ${newProduct.master_code} already exists in campaign`
+            );
+          }
+        });
+        break;
+      }
+
+      case "disable": {
+        const masterCodesToRemove = new Set(newProducts.map((p) => p.master_code));
+        updatedProducts = existingProducts.filter(
+          (p) => !masterCodesToRemove.has(p.master_code)
+        );
+        break;
+      }
+
+      default:
+        throw new Error(`Unsupported product action: ${action}`);
+    }
+
+    // Step 6: Build the complete campaign payload
+    const payload = {
+      name: campaignData.name,
+      status: campaignData.status,
+      start_at: campaignData.start_at,
+      promotion: {
+        vendor_ids: campaignData.promotion?.vendor_ids || [],
+        chain_ids: campaignData.promotion?.chain_ids || [],
+        products: updatedProducts, // ✅ only master_code + category_group_ids
+        search: {
+          keywords: campaignData.promotion?.search?.keywords || [],
+        },
+      },
+      pricing: {
+        budget: {
+          total: campaignData.pricing?.budget?.total,
+          consumed: campaignData.pricing?.budget?.consumed || 0,
+          ...(campaignData.pricing?.budget?.daily
+            ? { daily: campaignData.pricing.budget.daily }
+            : {}),
+        },
+        default_bid: campaignData.pricing?.default_bid || 0,
+        is_free: campaignData.pricing?.is_free || false,
+        custom_bids: campaignData.pricing?.custom_bids || [],
+      },
+      targeting: {
+        schedules:
+          campaignData.targeting?.schedules || [
+            {
+              weekdays: ["mo", "tu", "we", "th", "fr", "sa", "su"],
+              is_all_day: true,
+            },
+          ],
+        placements:
+          campaignData.targeting?.placements?.map(({ ad_type, ...rest }) => rest) || [],
+      },
+      creatives: campaignData.creatives || [],
+      ...(campaignData.end_at ? { end_at: campaignData.end_at } : {}),
+    };
+
+    return payload;
+  } catch (error) {
+    console.error("Error in prepareProductPayloadInput:", error.message);
+    throw error;
+  }
+}
+
 
 module.exports = {
   fetchCampaignDetails,
@@ -358,4 +529,6 @@ module.exports = {
   preparePayloadInput,
   transformCampaignForPut,
   prepareKeywordPayloadInput,
+  searchProducts,
+  prepareProductPayloadInput,
 };
