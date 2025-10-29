@@ -589,35 +589,65 @@ const ACTION_CONFIG = {
 
       keyword: {
         bid: {
-          // input: { campaignCode, targetType, targetValue, bid }
-          buildPayload: ({ campaignCode, targetType, targetValue, bid }) => ({
-            campaignCode,
-            targetType,
-            targetValue,
-            bid,
-          }),
-          message: ({ campaignCode, targetValue, bid }) =>
-            `Keyword ${targetValue} bid set to ${bid} for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              targetType: payload.targetType,
+              targetValue: payload.targetValue,
+              bid: payload.bid,
+            };
+          },
+          message: ({ campaignCode, keywordsList, keywordCount, bid }) => {
+            if (keywordCount > 1) {
+              return `Bid set to ${bid} for ${keywordCount} keywords: "${keywordsList}" in campaign ${campaignCode}`;
+            }
+            return `Keyword "${keywordsList}" bid set to ${bid} for campaign ${campaignCode}`;
+          },
         },
         disable: {
-          // input: { campaignCode, targetType, targetValue }
-          buildPayload: ({ campaignCode, targetType, targetValue }) => ({
-            campaignCode,
-            targetType,
-            targetValue,
-          }),
-          message: ({ campaignCode, targetValue }) =>
-            `Keyword ${targetValue} disabled for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              targetType: payload.targetType,
+              targetValue: payload.targetValue,
+            };
+          },
+          message: ({ campaignCode, keywordsList, keywordCount }) => {
+            if (keywordCount > 1) {
+              return `${keywordCount} keywords disabled: "${keywordsList}" for campaign ${campaignCode}`;
+            }
+            return `Keyword "${keywordsList}" disabled for campaign ${campaignCode}`;
+          },
         },
         enable: {
-          // same payload as disable
-          buildPayload: ({ campaignCode, targetType, targetValue }) => ({
-            campaignCode,
-            targetType,
-            targetValue,
-          }),
-          message: ({ campaignCode, targetValue }) =>
-            `Keyword ${targetValue} enabled for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              targetType: payload.targetType,
+              targetValue: payload.targetValue,
+            };
+          },
+          message: ({ campaignCode, keywordsList, keywordCount }) => {
+            if (keywordCount > 1) {
+              return `${keywordCount} keywords enabled: "${keywordsList}" for campaign ${campaignCode}`;
+            }
+            return `Keyword "${keywordsList}" enabled for campaign ${campaignCode}`;
+          },
         },
       },
     },

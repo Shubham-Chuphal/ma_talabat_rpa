@@ -2,7 +2,7 @@ const axiosInstance = require("../../../utils/axiosInstance");
 
 async function fetchCampaignDetails(url, campaignCode, method = "POST", cookie) {
   let response;
-  const cookie1 = 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYxNjk2Mzg4LCJpYXQiOjE3NjE2OTI3ODgsImp0aSI6ImphejR0bWllc3hqcWwwaHUzajVzdGVpM2I0bDhnbzNjcnI1bHp0Zm4iLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.g5DVMsQZeG6QFldnjys6q8uCU6gVXQG-mQA0r0hIN80eMdMfp9koRm2F8COUlo_w2Nl9QADgFTOmltI8AqbnmAspT8VHD-fhD51rIhcXJD2ZL3Kq64--s8EYQnqoD92W7K-k9COWwZkTuUo9SeLixdIKiTC_nF7pEKP1MF_JcPML4GHPAvvoMA_UiyJM-jn5usWBW-E9WJLrNj0boEZlVA3VF5lR-kZt1MpWWmEFZSb-s6NlHeB8kRQgQpVvu50FqE30PMF_LAdbDfVTIZR5Sm67Rc-0WcUtfN2RqJs-qpGC9GGwARvjymQGUVcSWNT1y-20UrTaIrbNC2pIRk4kOA'
+  const cookie1 = 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYxNzAxNzI2LCJpYXQiOjE3NjE2OTgxMjYsImp0aSI6ImFmMjI2MG91MjJoMTRydGp1YmRoN3QxenB6ejVxenNjNXkzbXZnYm0iLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.G1Yq6I7I6c2x0DNLlAh1748GTM5C6cJWsb-JIroIgtA5rP186P-UY97Vd-OOws0c3JKzdM9rtU2SvMbl2TpYwoMk9zmRiA8tG0JPiXZriLjm3uZPCj5Gsato-1zG1HVwv1qRIODYoVOd2DFAEh993vO4zkjyRAaAfqm_WA6rWNy6_ChbU3fJLNThYYE2qY_z-bud5mgIdRVNzfxk9Ii2cyDWFRyf_2Vu-z-PHR59RlL-ElpfP32G6qw24KckRv85m_LGijfIIJfkCbi6DvYLUEFqLvq3eg_3_YW1q8oIh31WQqeZ8aTGb7gVWUZxVF6U2N3uGvebPihQYzC3xP5ClA'
   if (method === "GET") {
     // For GET requests, campaign_id is already in the URL
     response = await axiosInstance.get(url, {
@@ -210,9 +210,152 @@ function transformCampaignForPut(campaignData, updates = {}) {
   return payload;
 }
 
+/**
+ * Prepare payload input for keyword actions (enable, disable, bid)
+ * Modifies the campaign's keywords array based on the action
+ * Supports both single keyword (string) and multiple keywords (array)
+ */
+function prepareKeywordPayloadInput(
+  action,
+  campaign_id,
+  targetValue,
+  bid,
+  campaignDetails = {},
+  targetType = "keyword"
+) {
+  if (!campaignDetails.data) {
+    throw new Error("Campaign details are required for keyword actions");
+  }
+
+  const campaignData = campaignDetails.data;
+  const existingKeywords = campaignData.promotion?.search?.keywords || [];
+  
+  // Normalize targetValue to array for consistent processing
+  const targetKeywords = Array.isArray(targetValue) ? targetValue : [targetValue];
+  
+  let updatedKeywords = [...existingKeywords];
+  const existingKeywordsLower = new Set(
+    existingKeywords.map(kw => String(kw).toLowerCase().trim())
+  );
+
+  switch (action) {
+    case "enable":
+      // Add keywords that don't exist (case-insensitive check)
+      targetKeywords.forEach(keyword => {
+        const keywordLower = String(keyword).toLowerCase().trim();
+        if (!existingKeywordsLower.has(keywordLower)) {
+          updatedKeywords.push(keyword);
+          existingKeywordsLower.add(keywordLower); // Track to avoid duplicates in same batch
+        }
+      });
+      break;
+
+    case "disable":
+      // Remove keywords (case-insensitive)
+      const toRemoveLower = new Set(
+        targetKeywords.map(kw => String(kw).toLowerCase().trim())
+      );
+      updatedKeywords = existingKeywords.filter(
+        kw => !toRemoveLower.has(String(kw).toLowerCase().trim())
+      );
+      break;
+
+    case "bid":
+      // For bid changes, we need to update custom_bids
+      // Ensure keywords exist in the keywords array
+      targetKeywords.forEach(keyword => {
+        const keywordLower = String(keyword).toLowerCase().trim();
+        if (!existingKeywordsLower.has(keywordLower)) {
+          updatedKeywords.push(keyword);
+          existingKeywordsLower.add(keywordLower);
+        }
+      });
+      break;
+
+    default:
+      throw new Error(`Unsupported keyword action: ${action}`);
+  }
+
+  // Build the complete campaign payload with updated keywords
+  const payload = {
+    name: campaignData.name,
+    status: campaignData.status,
+    start_at: campaignData.start_at,
+    end_at: campaignData.end_at,
+    promotion: {
+      vendor_ids: campaignData.promotion?.vendor_ids || [],
+      chain_ids: campaignData.promotion?.chain_ids || [],
+      products: (campaignData.promotion?.products || []).map(product => ({
+        master_code: product.master_code,
+        category_group_ids: product.category_group_ids || product.original_category_group_ids || [],
+      })),
+      search: {
+        keywords: updatedKeywords,
+      },
+    },
+    pricing: {
+      budget: {
+        total: campaignData.pricing?.budget?.total,
+        daily: campaignData.pricing?.budget?.daily,
+        consumed: campaignData.pricing?.budget?.consumed || 0,
+      },
+      default_bid: campaignData.pricing?.default_bid || 0,
+      is_free: campaignData.pricing?.is_free || false,
+      custom_bids: campaignData.pricing?.custom_bids || [],
+    },
+    targeting: {
+      schedules: campaignData.targeting?.schedules || [
+        {
+          weekdays: ["mo", "tu", "we", "th", "fr", "sa", "su"],
+          is_all_day: true,
+        },
+      ],
+      placements: campaignData.targeting?.placements || [],
+    },
+    creatives: campaignData.creatives || [],
+  };
+
+  // For bid action, also update custom_bids if needed
+  if (action === "bid" && bid !== undefined) {
+    // Process each keyword for bid updates
+    targetKeywords.forEach(keyword => {
+      const keywordLower = String(keyword).toLowerCase().trim();
+      
+      // Find existing custom bid for this keyword
+      const existingBidIndex = payload.pricing.custom_bids.findIndex(
+        cb => String(cb.search_keyword).toLowerCase().trim() === keywordLower
+      );
+
+      if (existingBidIndex >= 0) {
+        // Update existing bid
+        payload.pricing.custom_bids[existingBidIndex].bid = bid;
+      } else {
+        // Add new custom bid
+        payload.pricing.custom_bids.push({
+          bid: bid,
+          search_keyword: keyword,
+          slots: [1, 2, 3], // Default slots
+          position: "",
+          screen: "",
+        });
+      }
+    });
+  }
+
+  return {
+    ...payload,
+    // targetType,
+    // targetValue: Array.isArray(targetValue) ? targetValue : targetValue,
+    // bid,
+    // campaignCode: campaign_id,
+    // processedKeywords: targetKeywords, // For logging/debugging
+  };
+}
+
 module.exports = {
   fetchCampaignDetails,
   checkNameExists,
   preparePayloadInput,
   transformCampaignForPut,
+  prepareKeywordPayloadInput,
 };

@@ -2,6 +2,8 @@ const { getApiUrl, actionApiCall } = require("../../services/actionApi");
 const { fetchTalabatTokenArray } = require("../../utils/getCookies");
 const { getConnectedDatabases } = require("../../db/connect");
 const { ACTION_CONFIG } = require("../../constants");
+const { fetchCampaignDetails, prepareKeywordPayloadInput } = require("../../services/action/campaign/config_api");
+const { requestWithCookieRenewal } = require("../../utils/requestHandler");
 // const {
 //   payload: shopAdPayload,
 // } = require("../../services/action/keyword/shopAdActionPayload");
@@ -69,37 +71,69 @@ const keywordController = {
           }
 
           const typeUrl = actionConfig.typeSuffixUrl[typeKey]?.["keyword"];
-          const action_url = getApiUrl(typeUrl?.[actionKey]?.url);
+          const campaignTypeUrl = actionConfig.typeSuffixUrl[typeKey]?.["campaign"];
+          
+          // Replace :campaign_id placeholder in URL
+          let actionUrlSuffix = typeUrl?.[actionKey]?.url || "";
+          actionUrlSuffix = actionUrlSuffix.replace(":campaign_id", campaign_id);
+          
+          const action_url = getApiUrl(actionUrlSuffix, clientId);
           const payloadFn =
             actionConfig.payloadTemplates[typeKey]?.["keyword"]?.[actionKey];
-          if (!typeUrl || !payloadFn || !action_url) {
+          if (!typeUrl || !payloadFn) {
             throw new Error(
               `Unsupported action: ${typeKey}/keyword/${actionKey}`
             );
           }
 
-          const inputData = {
-            campaignCode: campaign_id,
-            targetType,
-            targetValue: targetValue || campaign_name,
-            bid,
-          };
-          const payload = payloadFn.buildPayload(inputData);
+          // Step 1: Fetch campaign details using GET
+          const getDetailsUrl = campaignTypeUrl?.campaign_details?.url?.replace(":campaign_id", campaign_id);
+          const fullDetailsUrl = getApiUrl(getDetailsUrl, clientId);
+          
+          const campaignDetails = await requestWithCookieRenewal(
+            fetchCampaignDetails,
+            [fullDetailsUrl, campaign_id, "GET"],
+            { tokenMap, storeKey, clientId }
+          );
 
+          // Step 2: Prepare payload by modifying keywords array
+          const inputData = prepareKeywordPayloadInput(
+            actionKey,
+            campaign_id,
+            targetValue || campaign_name,
+            bid,
+            campaignDetails,
+            targetType
+          );
+          
+          const payload = payloadFn.buildPayload(inputData);
+          
+          // Step 3: Call PUT API with modified payload
+          const httpMethod = typeUrl?.[actionKey]?.method || "PUT";
           const response = await actionApiCall(action_url, payload, {
             storeKey,
             tokenMap,
             clientId,
+            method: httpMethod,
           });
 
+          // Format message for single or multiple keywords
+          const keywordsList = Array.isArray(inputData.targetValue) 
+            ? inputData.targetValue.join(", ")
+            : inputData.targetValue;
+          
+          const keywordCount = inputData.processedKeywords?.length || 1;
+          
           results.push({
             campaign_id,
             targetType: inputData.targetType,
             targetValue: inputData.targetValue,
+            processedKeywords: inputData.processedKeywords,
+            keywordCount,
             success: true,
             message: payloadFn?.message
-              ? payloadFn.message({ ...inputData })
-              : `Action "${actionKey}" completed for target "${inputData.targetValue}" in campaign ${campaign_id}`,
+              ? payloadFn.message({ ...inputData, keywordsList, keywordCount })
+              : `Action "${actionKey}" completed for ${keywordCount} keyword(s): "${keywordsList}" in campaign ${campaign_id}`,
             action: actionKey,
             data: response,
           });
