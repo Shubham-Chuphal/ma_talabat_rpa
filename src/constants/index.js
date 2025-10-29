@@ -354,17 +354,12 @@ const ACTION_CONFIG = {
           url: "campaigns/:campaign_id",
           method: "GET",
         },
-        negative_keyword_list:
-          "_svc/mx-instant-api-plamanager/pla/campaign/negative-keyword/list",
-
         update_name: {
-          // preCheckUrl:
-          //   "campaigns/:campaign_id",
+          preCheckUrl: "campaigns/:campaign_id",
           url: "campaigns/:campaign_id",
           method: "PUT",
         },
         status: {
-          // url: "_svc/mx-instant-api-plamanager/pla/campaign/set-is-active",
           url: "campaigns/:campaign_id/status",
           method: "PATCH",
         },
@@ -381,18 +376,74 @@ const ACTION_CONFIG = {
           method: "PUT",
         },
         change_date: {
-          // preFetchRequired: true,
           url: "campaigns/:campaign_id",
           method: "PUT",
         },
-        // For negative keywords update (add/remove computed in controller)
-        add_negative: {
-          preFetchRequired: true,
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-negative-keyword/update",
+        day_parting: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
-        remove_negative: {
-          preFetchRequired: true,
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-negative-keyword/update",
+      },
+      product: {
+        enable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        disable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+      },
+
+      keyword: {
+        bid: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        disable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        enable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+      },
+    },
+    "display ad": {
+      campaign: {
+        campaign_details: {
+          url: "campaigns/:campaign_id",
+          method: "GET",
+        },
+        update_name: {
+          preCheckUrl: "campaigns/:campaign_id",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        status: {
+          url: "campaigns/:campaign_id/status",
+          method: "PATCH",
+        },
+        budget: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        daily_budget: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        cpm_bid: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        change_date: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        day_parting: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
       },
       product: {
@@ -425,6 +476,7 @@ const ACTION_CONFIG = {
 
   payloadMap: {
     "product ad": "productAdPayload",
+    "display ad": "displayAdPayload",
   },
 
   allowedActions: {
@@ -436,8 +488,20 @@ const ACTION_CONFIG = {
         "status",
         "change_date",
         "update_name",
-        "add_negative",
-        "remove_negative",
+        "day_parting",
+      ],
+      product: ["enable", "disable"],
+      keyword: ["bid", "disable", "enable"],
+    },
+    "display ad": {
+      campaign: [
+        "budget",
+        "daily_budget",
+        "cpm_bid",
+        "status",
+        "change_date",
+        "update_name",
+        "day_parting",
       ],
       product: ["enable", "disable"],
       keyword: ["bid", "disable", "enable"],
@@ -553,24 +617,19 @@ const ACTION_CONFIG = {
           message: ({ campaignName, campaign_id, name }) =>
             `Campaign name updated to "${name || campaignName}" for campaign ID ${campaign_id}`,
         },
-
-        add_negative: {
-          buildPayload: ({ campaignCode, negativeKeywords }) => ({
-            campaignCode,
-            negativeKeywords,
-          }),
-          message: ({ campaignCode, negativeKeywords }) =>
-            `Updated negative keywords for campaign ${campaignCode}. New list: ${Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
-            }`,
-        },
-        remove_negative: {
-          buildPayload: ({ campaignCode, negativeKeywords }) => ({
-            campaignCode,
-            negativeKeywords,
-          }),
-          message: ({ campaignCode, negativeKeywords }) =>
-            `Updated negative keywords for campaign ${campaignCode}. New list: ${Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
-            }`,
+         day_parting: {
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure (from transformCampaignForPut), return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignName: payload.campaignName,
+            };
+          },
+          message: ({ campaignName, campaign_id, name }) =>
+            `Campaign name updated to "${name || campaignName}" for campaign ID ${campaign_id}`,
         },
       },
 

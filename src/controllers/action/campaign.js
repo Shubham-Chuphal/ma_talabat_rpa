@@ -88,7 +88,7 @@ const campaignController = {
           let campaignDetails = {};
           
           // Actions that require GET campaign details first
-          const requiresGetDetails = ["update_name", "budget", "change_date","daily_budget","cpm_bid"];
+          const requiresGetDetails = ["update_name", "budget", "change_date","daily_budget","cpm_bid","day_parting"];
           
           if (requiresGetDetails.includes(action)) {
             // Fetch full campaign details using GET
@@ -100,21 +100,7 @@ const campaignController = {
               [fullDetailsUrl, campaign_id, "GET"], // Pass method as third argument
               { tokenMap, storeKey, clientId }
             );
-          } else if (typeUrl?.[action].preFetchRequired) {
-            // Legacy pre-fetch for negative keywords
-            const isNegAction =
-              action === "add_negative" || action === "remove_negative";
-            const urlToFetch =
-              isNegAction && negative_list_url
-                ? negative_list_url
-                : details_url;
-
-            campaignDetails = await requestWithCookieRenewal(
-              fetchCampaignDetails,
-              [urlToFetch, campaign_id],
-              { tokenMap, storeKey, clientId }
-            );
-          }
+          } 
 
           // Step 2: Prepare input for payload
           const inputData = preparePayloadInput(
