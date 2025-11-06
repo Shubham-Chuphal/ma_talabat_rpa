@@ -2,7 +2,7 @@ const axiosInstance = require("../../../utils/axiosInstance");
 
 async function fetchCampaignDetails(url, campaignCode, method = "POST", cookie) {
   let response;
-  const cookie1 = 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYxNzgzMjgxLCJpYXQiOjE3NjE3Nzk2ODEsImp0aSI6InlxYTB3bmR6Njc3ano2dW9yaHNjMGY5ZTIyZWVtYmtuOTk0ODYxdXEiLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.E2zbW1lGCGbTO0qL-whIW6prerMUHU3Sk7sfCEHjfhomt2HZR3jhsLrfsQgKLtCKkzNu4cYJfTuHrO0_bxUm7EX9FfHTaswIeRj9X9B6g6Yd3bRt1UBk7rTyeFV4ntad_U4neIdysB24kRfG-6VhFvVgK8PDr3gSBgUkMZRz-AfoupurRUR4nhmdjQW4yicSKc8HHJzKMyAekLnodxSO6bth_00vWFi7P5OjUJRkyPjDZan3JKTHXjMEgu6oqF7n7SCZGCZE8Zxml_iDW5ONLkTcexYzn7NYR2_Tm5fY-XTbIB2hioeXsR3wEvzaBVS0QgSeiMsOdmzKM9ODFlB8cQ'
+  const cookie1 = 'Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYyMzQ4NzM4LCJpYXQiOjE3NjIzNDUxMzgsImp0aSI6ImxiMXl1aDk4Y2ExYnMyOWVteXpmbmtqcmNqcTh4cWp1MGc1eTZxNXMiLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.jW51WUOSurmiU0wNIZcS6eL-6RoNHAGYs5dDjOwOd_1dSllM4C7L52Jw_X_blvTgTpJLfG7pF_5qiS0LrMxZ3IEs2lPHWaF9dOuZXwqWSN6-d1XiEeOQA2n4OGOKZaeHLtEBwr5roVla-w15-xmK6Fe9ceciExY5mQvV0lE630JeGSUzRxHg0AYZ6UDhxx5ySyDXLME7f8kPXcmwCqcBiAkFcXdMoFqAoy9D2FtpxLwGTi4DAD_KZ9qaQAxC2HYgCCODiW95XKXzs1rslSb_5AYw6esp6bTA4xWIPU86b6wRkIJHBpGWcwjhkV37UcvJ2XxisVbYZ5Ofdz4H9VzEjQ'
   if (method === "GET") {
     // For GET requests, campaign_id is already in the URL
     response = await axiosInstance.get(url, {
@@ -136,6 +136,8 @@ const preparePayloadInput = (
  * Merges existing campaign data with updates
  */
 function transformCampaignForPut(campaignData, updates = {}) {
+  const hasDailyBudgetUpdate = updates.daily_budget !== undefined;
+
   const payload = {
     name: updates.name || campaignData.name,
     status: updates.status || campaignData.status,
@@ -162,32 +164,46 @@ function transformCampaignForPut(campaignData, updates = {}) {
     },
     pricing: {
       budget: {
-        total: updates.budget !== undefined ? updates.budget : campaignData.pricing?.budget?.total,
-        ...(campaignData.pricing?.budget?.daily
-          ? { daily: campaignData.pricing.budget.daily }
-          : {}),
+        total: updates.budget !== undefined
+          ? updates.budget
+          : campaignData.pricing?.budget?.total,
+
+        // ✅ include daily if:
+        // - user is explicitly updating daily_budget, OR
+        // - campaign already has a daily budget field
+        ...(hasDailyBudgetUpdate
+          ? { daily: updates.daily_budget }
+          : campaignData.pricing?.budget?.daily !== undefined
+            ? { daily: campaignData.pricing.budget.daily }
+            : {}),
+
         consumed: campaignData.pricing?.budget?.consumed || 0,
       },
-      default_bid: updates.cpm_bid !== undefined ? updates?.cpm_bid : campaignData?.pricing?.default_bid || 0,
+      default_bid:
+        updates.cpm_bid !== undefined
+          ? updates.cpm_bid
+          : campaignData?.pricing?.default_bid || 0,
       is_free: campaignData?.pricing?.is_free || false,
       custom_bids: campaignData?.pricing?.custom_bids || [],
     },
     targeting: {
-      schedules: updates.day_parting ||
+      schedules:
+        updates.day_parting ||
         campaignData.targeting?.schedules || [
           {
             weekdays: ["mo", "tu", "we", "th", "fr", "sa", "su"],
             is_all_day: true,
           },
         ],
-      //do not include ad_type  
-      placements: campaignData.targeting?.placements?.map(({ ad_type, ...rest }) => rest) || [],
+      placements:
+        campaignData.targeting?.placements?.map(({ ...rest }) => rest) || [],
     },
     creatives: campaignData?.creatives || [],
   };
 
   return payload;
 }
+
 
 /**
  * Prepare payload input for keyword actions (enable, disable, bid)
@@ -293,7 +309,7 @@ function prepareKeywordPayloadInput(
         },
       ],
       placements:
-        campaignData.targeting?.placements?.map(({ ad_type, ...rest }) => rest) || [],
+        campaignData.targeting?.placements?.map(({...rest }) => rest) || [],
     },
     creatives: campaignData.creatives || [],
   };
@@ -344,7 +360,7 @@ async function searchProducts(searchTerm, entity = "TB_AE", cookie, vendorIds) {
     };
 
     console.log(data, "data");
-    const cookie1 = "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYxNzczOTAzLCJpYXQiOjE3NjE3NzAzMDMsImp0aSI6Ind0eXIxcTB0ODdseDR1ZnB1ZjV4am55MDVvdHVpaWo1ejBoamJibXYiLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.Te7E-WOLgdNTjCN3ikYEb95dHLnNPZWD6BMwFIkcspvesmuWfYSQj81JdfKd8gTnCx2pNHjXnGR_p9mBuareqxQiLiKMSyczmXKB-ny-Bv1aUixxlUDr8qzgNwL6-X7aFuaEVapfxC-wuN19QC7-y_-Hx2GqX0TUZIDsnoSbQmC9wntOyZCnrSaLtyW9-pKtdk90eG2kd4mxTunaVngkSW4wYzAhWXs96IMGTZ1Ix1tF16TZQc0RDup3aNFy22ZWQngg95mhR9C-nkiO8LiGaOtvy1Z0aG-na2HEaq0xV_XiXTWwbOamhPIkF5uSPiiBCQ908PTL4ldeZJN4fJvfHw"
+    const cookie1 = "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleW1ha2VyLWFkeC0wMDE0LXVzZXIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RoYWRzLmRoLWF1dGguaW8iLCJzdWIiOiJiMTkzNDQ0OC0zMmM1LTQzMjktYmMyZi1hZjdhZGUwZWIwODciLCJhdWQiOiJvcHMtcG9ydGFsLWRoYWRzLXRiIiwiZXhwIjoxNzYyMzQ4NzM4LCJpYXQiOjE3NjIzNDUxMzgsImp0aSI6ImxiMXl1aDk4Y2ExYnMyOWVteXpmbmtqcmNqcTh4cWp1MGc1eTZxNXMiLCJzY29wZSI6IiIsImVtYWlsIjoidGFsYWJhdC5tZWRpYUBlLWdlbmllLmFpIiwidXVpZCI6ImU2YzQ5Njk3LWVjY2ItNGFhYy1hNDUyLTYwM2JlYWZiODJmOSIsIm5hbWUiOiJHZW5pZSBBSSIsIm5hbWVzcGFjZXMiOlsiR0xPQkFMIiwiSEZfRUciLCJUQl9BRSIsIlRCX0JIIiwiVEJfSVEiLCJUQl9KTyIsIlRCX0tXIiwiVEJfT00iLCJUQl9RQSJdLCJhcHBsaWNhdGlvbnMiOnsib3BzLXBvcnRhbC1kaGFkcyI6IkRlbGl2ZXJ5IEhlcm8gQWRzIn0sInBlcm1pc3Npb25zIjp7Im9wcy1wb3J0YWwtZGhhZHMiOnsiR0xPQkFMIjpbInZpZXciXSwiSEZfRUciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQUUiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfQkgiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSVEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfSk8iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfS1ciOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfT00iOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXSwiVEJfUUEiOlsicm9sZTplZGl0b3IiLCJzb3VyY2U6ZXh0ZXJuYWwiXX19fQ.jW51WUOSurmiU0wNIZcS6eL-6RoNHAGYs5dDjOwOd_1dSllM4C7L52Jw_X_blvTgTpJLfG7pF_5qiS0LrMxZ3IEs2lPHWaF9dOuZXwqWSN6-d1XiEeOQA2n4OGOKZaeHLtEBwr5roVla-w15-xmK6Fe9ceciExY5mQvV0lE630JeGSUzRxHg0AYZ6UDhxx5ySyDXLME7f8kPXcmwCqcBiAkFcXdMoFqAoy9D2FtpxLwGTi4DAD_KZ9qaQAxC2HYgCCODiW95XKXzs1rslSb_5AYw6esp6bTA4xWIPU86b6wRkIJHBpGWcwjhkV37UcvJ2XxisVbYZ5Ofdz4H9VzEjQ"
     const url = `https://qcat-dsp-me.deliveryhero.io/api/v1/entities/${entity}/products?page=0&size=10&search_term=${encodedSearchTerm}`;
     console.log("Product search URL:", url);
 
@@ -489,7 +505,7 @@ async function prepareProductPayloadInput(
             },
           ],
         placements:
-          campaignData.targeting?.placements?.map(({ ad_type, ...rest }) => rest) || [],
+          campaignData.targeting?.placements?.map(({ ...rest }) => rest) || [],
       },
       creatives: campaignData.creatives || [],
       ...(campaignData.end_at ? { end_at: campaignData.end_at } : {}),
