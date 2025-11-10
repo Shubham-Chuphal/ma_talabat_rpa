@@ -6,7 +6,7 @@ async function fetchCampaignDetails(url, campaignCode, method = "POST", cookie) 
   if (method === "GET") {
     // For GET requests, campaign_id is already in the URL
     response = await axiosInstance.get(url, {
-      cookieString: cookie1,
+      cookieString: cookie,
     });
   } else {
     // For POST requests (legacy)
@@ -142,15 +142,21 @@ function transformCampaignForPut(campaignData, updates = {}) {
     name: updates.name || campaignData.name,
     status: updates.status || campaignData.status,
     start_at: updates.start_at || campaignData.start_at,
-    ...(
-      updates.end_date === "-1"
-        ? {} // do not include end_at at all
-        : updates.end_date
-          ? { end_at: `${updates.end_date}T23:59:59.999Z` }
-          : campaignData?.end_at
-            ? { end_at: campaignData.end_at }
-            : {}
-    ),
+     ...(() => {
+    if (updates.end_date === "-1") {
+      return {}; // omit end_at entirely
+    }
+
+    if (updates.end_date) {
+      return { end_at: `${updates.end_date}T23:59:59.999Z` };
+    }
+
+    if (campaignData?.end_at) {
+      return { end_at: campaignData.end_at };
+    }
+
+    return {};
+  })(),
     promotion: {
       vendor_ids: campaignData.promotion?.vendor_ids || [],
       chain_ids: campaignData.promotion?.chain_ids || [],
@@ -365,7 +371,7 @@ async function searchProducts(searchTerm, entity = "TB_AE", cookie, vendorIds) {
     console.log("Product search URL:", url);
 
     const response = await axiosInstance.post(url, data, {
-      cookieString: cookie1,
+      cookieString: cookie,
     });
 
     console.log("Product search response:", response.data);

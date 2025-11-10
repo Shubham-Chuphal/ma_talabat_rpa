@@ -549,7 +549,7 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ amount, campaign_id, pricing }) =>
-            `Budget updated to ${amount || pricing?.budget?.total} for campaign ID ${campaign_id}`,
+            `Daily budget updated to ${amount || pricing?.budget?.daily} for campaign ID ${campaign_id}`,
         },
          cpm_bid: {
           buildPayload: (payload) => {
@@ -569,7 +569,7 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ amount, campaign_id, pricing }) =>
-            `Budget updated to ${amount || pricing?.budget?.total} for campaign ID ${campaign_id}`,
+            `CPM Bid updated to ${amount || pricing?.default_bid} for campaign ID ${campaign_id}`,
         },
 
         status: {
@@ -577,7 +577,7 @@ const ACTION_CONFIG = {
             status: status ? status : null
           }),
           message: ({ status, campaign_id }) =>
-            `Campaign ${campaign_id} is now ${status ? "Active" : "Paused"}`,
+            `Campaign ${campaign_id} is now ${status === "active" ? "Active" : status === "paused" ? "Paused" : status === "cancelled" ? "Cancelled" : status}`,
         },
 
         change_date: {
@@ -600,7 +600,7 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ campaign_id, end_at }) =>
-            `Campaign dates updated successfully for campaign ID ${campaign_id}${end_at ? ` (end date: ${end_at})` : ''}`,
+            `Campaign dates updated successfully for campaign ID ${campaign_id}${end_at ? ` (end date: ${end_at})` : ' (always on)'}`,
         },
 
         update_name: {
@@ -628,8 +628,10 @@ const ACTION_CONFIG = {
               campaignName: payload.campaignName,
             };
           },
-          message: ({ campaignName, campaign_id, name }) =>
-            `Campaign name updated to "${name || campaignName}" for campaign ID ${campaign_id}`,
+          message: ({ campaignName, campaign_id, targeting }) =>
+            // `Day parting action updated to "${targeting.schedules || campaignName}" for campaign ID ${campaign_id}`,
+            `Day parting action updated for campaign ID ${campaign_id}`,
+
         },
       },
 
@@ -646,11 +648,8 @@ const ACTION_CONFIG = {
               sku: payload.sku,
             };
           },
-          message: ({ productsList, productCount, searchTerm }) => {
-            if (productCount > 1) {
-              return `${productCount} products enabled: "${productsList}" (searched: "${searchTerm}")`;
-            }
-            return `Product "${productsList}" enabled (searched: "${searchTerm}")`;
+          message: ({ productsList }) => {
+            return ` The updated products list: "${productsList}"`;
           },
         },
         disable: {
@@ -665,11 +664,8 @@ const ACTION_CONFIG = {
               sku: payload.sku,
             };
           },
-          message: ({ productsList, productCount, searchTerm }) => {
-            if (productCount > 1) {
-              return `${productCount} products disabled: "${productsList}" (searched: "${searchTerm}")`;
-            }
-            return `Product "${productsList}" disabled (searched: "${searchTerm}")`;
+          message: ({  productsList }) => {
+            return `The updated products list: "${productsList}"`;
           },
         },
       },
@@ -709,11 +705,8 @@ const ACTION_CONFIG = {
               targetValue: payload.targetValue,
             };
           },
-          message: ({ campaignCode, keywordsList, keywordCount }) => {
-            if (keywordCount > 1) {
-              return `${keywordCount} keywords disabled: "${keywordsList}" for campaign ${campaignCode}`;
-            }
-            return `Keyword "${keywordsList}" disabled for campaign ${campaignCode}`;
+          message: ({ campaign_id, keywordsList }) => {   
+            return `The updated keyword list: "${keywordsList}" for campaign ${campaign_id}`;
           },
         },
         enable: {
@@ -729,11 +722,8 @@ const ACTION_CONFIG = {
               targetValue: payload.targetValue,
             };
           },
-          message: ({ campaignCode, keywordsList, keywordCount }) => {
-            if (keywordCount > 1) {
-              return `${keywordCount} keywords enabled: "${keywordsList}" for campaign ${campaignCode}`;
-            }
-            return `Keyword "${keywordsList}" enabled for campaign ${campaignCode}`;
+          message: ({ campaign_id, keywordsList }) => {
+            return `The updated keyword list: "${keywordsList}" for campaign ${campaign_id}`;
           },
         },
       },

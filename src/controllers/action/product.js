@@ -121,33 +121,30 @@ const productController = {
           });
 
           // Format message
-          const productsList = inputData.foundProducts
+          const productsList = inputData.promotion.products
             .map(p => p.master_code)
             .join(", ");
           
-          const productCount = inputData.productCount || 0;
+          const productCount = inputData.promotion.products.length || 0;
           
           results.push({
             campaign_id,
-            searchTerm: product_search_term,
-            foundProducts: inputData.foundProducts,
-            productCount,
+            campaign_name: campaignDetails.data?.promotion?.name,
+            product_name: product_search_term,
             success: true,
-            message: payloadFn?.message
-              ? payloadFn.message({ ...inputData, productsList, productCount })
-              : `Action "${actionKey}" completed for ${productCount} product(s): "${productsList}" in campaign ${campaign_id}`,
+            message: `Action "${actionKey}" completed for product: ${product_search_term}`,
             action: actionKey,
-            data: response,
           });
         } catch (err) {
           results.push({
             campaign_id: item?.campaign_id,
-            searchTerm: item?.product_search_term,
+            campaign_name: item?.campaign_name,
+            product_name: item?.product_search_term,
             success: false,
             message: getErrorMessage({
               action: String(item?.action || "").toLowerCase(),
               campaignCode: item?.campaign_id,
-              searchTerm: item?.product_search_term,
+              product: item?.product_search_term,
               error: err,
             }),
           });
@@ -170,8 +167,8 @@ const productController = {
   },
 };
 
-function getErrorMessage({ action, campaignCode, searchTerm, error }) {
-  return `❌ Action "${action}" failed for search term "${searchTerm}" in campaign "${campaignCode}". Error: ${error?.message || error}`;
+function getErrorMessage({ action, campaignCode, product, error }) {
+  return `Action "${action}" failed for search term "${product}" in campaign "${campaignCode}". Error: ${error?.message || error}`;
 }
 
 module.exports = productController;
