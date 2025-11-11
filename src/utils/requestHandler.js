@@ -104,7 +104,7 @@ async function requestWithCookieRenewal(apiCallFn, args, options) {
       // Call the passed API function with args + cookie at the end
       return await apiCallFn(...args, cookie);
     } catch (error) {
-      const is401 = error.response?.status === 401;
+      const is401 = error.response?.status === 403;
 
       if (is401 && attempt < retryCount - 1) {
         // Refresh cookies and update tokenMap
