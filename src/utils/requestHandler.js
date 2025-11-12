@@ -1,4 +1,8 @@
 const { fetchTalabatCookies } = require("../utils/getCookies");
+
+// Track in-flight refreshes per client to avoid duplicate concurrent logins
+const _inFlightRefreshByClient = new Map();
+
 /**
  * Generic async retry utility.
  * @param {Function} fn - Async function to execute. Should return a promise.
@@ -92,6 +96,33 @@ function getTalabatApiHeaders(token, customHeaders = {}, options = {}) {
   };
 }
 
+/**
+ * Single-flight cookie refresh: if a refresh for the same clientId is already in-flight,
+ * wait for it and reuse the result instead of starting another login.
+ * @param {string|number} clientId
+ * @returns {Promise<Array<{[store:string]: string}>>>}
+ */
+async function refreshCookiesSingleFlight(clientId) {
+  if (!clientId) throw new Error("clientId is required for cookie refresh");
+  // If a refresh is already running, await it
+  if (_inFlightRefreshByClient.has(clientId)) {
+    console.log(`⏳ Cookie refresh already in progress for client ${clientId}, waiting...`);
+    return _inFlightRefreshByClient.get(clientId);
+  }
+  // Start a new refresh and record the promise
+  console.log(`🔄 Starting new cookie refresh for client ${clientId}`);
+  const refreshPromise = (async () => {
+    try {
+      return await fetchTalabatCookies(clientId);
+    } finally {
+      // Ensure cleanup regardless of success/failure so future attempts can retry
+      _inFlightRefreshByClient.delete(clientId);
+    }
+  })();
+  _inFlightRefreshByClient.set(clientId, refreshPromise);
+  return refreshPromise;
+}
+
 async function requestWithCookieRenewal(apiCallFn, args, options) {
   const { retryCount = 2, tokenMap, storeKey, clientId } = options;
   let attempt = 0;
@@ -104,16 +135,19 @@ async function requestWithCookieRenewal(apiCallFn, args, options) {
       // Call the passed API function with args + cookie at the end
       return await apiCallFn(...args, cookie);
     } catch (error) {
-      const is401 = error.response?.status === 403;
+      const status = error.response?.status;
+      const shouldRefresh = status === 401 || status === 403;
 
-      if (is401 && attempt < retryCount - 1) {
-        // Refresh cookies and update tokenMap
-        const updatedCookies = await fetchTalabatCookies(clientId);
+      if (shouldRefresh && attempt < retryCount - 1) {
+        console.log(`🔑 Token expired (${status}), refreshing cookies for client ${clientId}...`);
+        // Refresh cookies with single-flight guarantee and update tokenMap
+        const updatedCookies = await refreshCookiesSingleFlight(clientId);
         updatedCookies.forEach((item) => {
           const [store, newCookie] = Object.entries(item)[0];
           tokenMap[store] = newCookie;
         });
         attempt++;
+        console.log(`✅ Cookies refreshed, retrying attempt ${attempt + 1}/${retryCount}`);
         continue; // retry with new cookie
       }
       throw error;
@@ -126,5 +160,6 @@ module.exports = {
   asyncHandler,
   retryAsync,
   getTalabatApiHeaders,
+  refreshCookiesSingleFlight,
   requestWithCookieRenewal,
 };
