@@ -38,14 +38,8 @@ const globalReqQueue = [];
 let currentMinReqIntervalMs = 450; // pacing between starts (moderate)
 let nextGlobalAvailableAt = 0;
 
-const TUNE_GRC_FLOOR = parseInt(
-  process.env.TALABAT_TUNE_GRC_FLOOR || "2",
-  10
-);
-const TUNE_GRC_CEIL = parseInt(
-  process.env.TALABAT_TUNE_GRC_CEIL || "4",
-  10
-);
+const TUNE_GRC_FLOOR = parseInt(process.env.TALABAT_TUNE_GRC_FLOOR || "2", 10);
+const TUNE_GRC_CEIL = parseInt(process.env.TALABAT_TUNE_GRC_CEIL || "4", 10);
 const TUNE_MRI_FLOOR_MS = parseInt(
   process.env.TALABAT_TUNE_MRI_FLOOR_MS || "300",
   10
@@ -832,7 +826,8 @@ async function processSingleToken(
 
         // Format and push accumulated rows
         const rowsWithCampaign = ACC.map((row) => ({ ...row, campaign }));
-        const createdOnChild = typeof date === "string" ? date : date?.start_date;
+        const createdOnChild =
+          typeof date === "string" ? date : date?.start_date;
         const formattedRows = fetchConf.format
           ? rowsWithCampaign.map((row) => fetchConf.format(row, createdOnChild))
           : rowsWithCampaign;

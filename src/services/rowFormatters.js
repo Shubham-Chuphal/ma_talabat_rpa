@@ -83,6 +83,7 @@ function formatKeywordRow(row) {
   return {
     // Map to talabat_keywords model
     keyword: row.keyword || row.targetValue || null,
+    // ! why is status active?
     status: "active",
     campaign_id: campaign.campaign_id || null,
     campaign_name: campaign.campaign_name || null,

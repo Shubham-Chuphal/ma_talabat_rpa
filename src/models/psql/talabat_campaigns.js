@@ -24,6 +24,8 @@ module.exports = (sequelize, Sequelize) => {
       updated_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
       account: { type: DataTypes.STRING },
       account_id: { type: DataTypes.STRING },
+      daily_budget: { type: DataTypes.DECIMAL },
+      cpm_bid: { type: DataTypes.DECIMAL },
     },
     { tableName: "talabat_campaigns", timestamps: false }
   );

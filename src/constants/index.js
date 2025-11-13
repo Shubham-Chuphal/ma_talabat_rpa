@@ -64,22 +64,6 @@ const STRUCTURE_CONFIG = [
               };
             },
           },
-          // {
-          //   type: "Categories",
-          //   subUrl: "performance/categories",
-          //   method: "POST",
-          //   getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-          //     params: { size: 50, page: 0, start_date, end_date },
-          //     data: {
-          //       account_ids: [accountId],
-          //       campaign_ids: [campaignId],
-          //     },
-          //   }),
-          //   model: "talabat_sub_category", // align with model file
-          //   outputKey: "categories",
-          //   dataExtractor: (data) => data?.data || [],
-          //   format: formatCategoryRow,
-          // },
           {
             type: "Keywords",
             subUrl: "performance/keywords",
@@ -110,6 +94,19 @@ const STRUCTURE_CONFIG = [
             },
           },
         ],
+      },
+    ],
+  },
+  {
+    "Custom Data": [
+      {
+        // This subUrl will be overridden in the controller, but we keep the block here.
+        subUrl: "",
+        method: "GET",
+        getPayload: () => ({}),
+        model: "talabat_campaigns",
+        dataExtractor: (data) => data || [],
+        format: (row) => row,
       },
     ],
   },
