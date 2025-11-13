@@ -84,11 +84,17 @@ exports.campaignStructure = async (req, res) => {
       logger,
       { baseUrl: talabatClient.baseUrl, entityCode: talabatClient.entityCode }
     );
+
+    console.log(
+      campaign_details?.results?.[0]?.keywords,
+      "<<< campaign_details"
+    );
+
     // !------------------------------------------------
-    let campaignArray = [];
-    await campaign_details?.results[0]?.campaigns?.map((campaign) => {
-      campaignArray.push(campaign.campaign_id);
-    });
+    let campaignArray = ["68f4c3091c1b65d7ceb8c61a"];
+    // await campaign_details?.results[0]?.campaigns?.map((campaign) => {
+    //   campaignArray.push(campaign.campaign_id);
+    // });
     console.log("campaignArray:", campaignArray, campaignArray.length);
 
     if (campaignArray.length > 0) {
@@ -129,6 +135,7 @@ exports.campaignStructure = async (req, res) => {
 
       // Wait for all API calls to complete
       const allCustomDataResults = await Promise.all(customDataPromises);
+
       // --- Data Merging Logic ---
       const campaignDetailsMap = new Map();
 
@@ -141,20 +148,20 @@ exports.campaignStructure = async (req, res) => {
       for (const detail of detailedCampaigns) {
         // The 'detail' object is now the correct campaign data, no '.data' needed.
         const campaignData = detail.data;
+        console.log(campaignData, "<<< campaignData");
         if (campaignData && campaignData.id) {
           campaignDetailsMap.set(campaignData.id, {
             default_bid: campaignData.pricing?.default_bid,
             daily_budget: campaignData.pricing?.budget?.daily || null,
           });
         }
-        // console.log(campaignData, "<<< campaign Data");
       }
 
+      return;
+
       console.log(campaignDetailsMap, "<<< campaign Data");
-      // return;
       // 2. Merge the data into the original campaign list
       const originalCampaigns = campaign_details?.results?.[0]?.campaigns || [];
-      console.log(originalCampaigns, "<<< originalCampaigns");
       const mergedCampaigns = originalCampaigns.map((campaign) => {
         const extraData = campaignDetailsMap.get(campaign.campaign_id);
         if (extraData) {
@@ -167,22 +174,16 @@ exports.campaignStructure = async (req, res) => {
         return campaign;
       });
 
-      console.log(mergedCampaigns, "<<< mergedCampaigns");
-
       // 3. Replace the original campaigns with the merged data
       if (campaign_details?.results?.[0]) {
         campaign_details.results[0].campaigns = mergedCampaigns;
       }
       // --- End of Data Merging Logic ---
     }
+    return;
 
+    console.log(campaign_details, "<<< campaign_details");
     if (campaign_details) {
-      const { campaigns, adGroups, ads } = campaign_details;
-      const allCampaigns = uniqBy(
-        (campaigns || []).concat(get(existingData, "campaigns", [])),
-        "campaign_id"
-      );
-
       const entityInsertMap = getEntityInsertMapFromConfig(STRUCTURE_CONFIG);
 
       function flattenByKey(details, key) {

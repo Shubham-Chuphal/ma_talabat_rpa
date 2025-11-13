@@ -23,6 +23,9 @@ function formatCampaignRow(row, brandLookup, cookieKey, existingData, adType) {
       : null;
   const pinTimestamp = existingData[campaign_id] || null;
 
+  const daily_budget = row.daily_budget || null;
+  const cpm_bid = row.cpm_bid || null;
+
   return {
     campaign_id,
     campaign_name,
@@ -39,6 +42,8 @@ function formatCampaignRow(row, brandLookup, cookieKey, existingData, adType) {
     account: brand_name,
     formatted: true,
     entityType: "Campaign",
+    daily_budget,
+    cpm_bid,
   };
 }
 
