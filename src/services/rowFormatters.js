@@ -98,6 +98,7 @@ function formatKeywordRow(row) {
     ad_type: campaign.ad_type || null,
     formatted: true,
     entityType: "Keyword",
+    bid: campaign.bid || null,
   };
 }
 

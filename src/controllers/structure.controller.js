@@ -91,11 +91,10 @@ exports.campaignStructure = async (req, res) => {
     );
 
     // !------------------------------------------------
-    let campaignArray = ["68f4c3091c1b65d7ceb8c61a"];
-    // await campaign_details?.results[0]?.campaigns?.map((campaign) => {
-    //   campaignArray.push(campaign.campaign_id);
-    // });
-    console.log("campaignArray:", campaignArray, campaignArray.length);
+    let campaignArray = [];
+    await campaign_details?.results[0]?.campaigns?.map((campaign) => {
+      campaignArray.push(campaign.campaign_id);
+    });
 
     if (campaignArray.length > 0) {
       logger("Fetching custom data for each campaign...");
@@ -139,28 +138,32 @@ exports.campaignStructure = async (req, res) => {
       // --- Data Merging Logic ---
       const campaignDetailsMap = new Map();
 
-      // Flatten the results from all the separate API calls
+      // 1. Build a comprehensive lookup map from the detailed campaign data
       const detailedCampaigns = allCustomDataResults
         .flatMap((result) => result.results.flatMap((r) => r.campaigns || []))
-        // Filter out any results from failed API calls that don't have the 'data' property
         .filter((detail) => detail.data);
 
       for (const detail of detailedCampaigns) {
-        // The 'detail' object is now the correct campaign data, no '.data' needed.
         const campaignData = detail.data;
-        console.log(campaignData, "<<< campaignData");
         if (campaignData && campaignData.id) {
+          const customBidsMap = new Map();
+          if (campaignData.pricing?.custom_bids) {
+            for (const customBid of campaignData.pricing.custom_bids) {
+              if (customBid.search_keyword) {
+                customBidsMap.set(customBid.search_keyword, customBid.bid);
+              }
+            }
+          }
+
           campaignDetailsMap.set(campaignData.id, {
             default_bid: campaignData.pricing?.default_bid,
             daily_budget: campaignData.pricing?.budget?.daily || null,
+            custom_bids: customBidsMap,
           });
         }
       }
 
-      return;
-
-      console.log(campaignDetailsMap, "<<< campaign Data");
-      // 2. Merge the data into the original campaign list
+      // 2. Enrich the original campaigns list
       const originalCampaigns = campaign_details?.results?.[0]?.campaigns || [];
       const mergedCampaigns = originalCampaigns.map((campaign) => {
         const extraData = campaignDetailsMap.get(campaign.campaign_id);
@@ -174,15 +177,29 @@ exports.campaignStructure = async (req, res) => {
         return campaign;
       });
 
-      // 3. Replace the original campaigns with the merged data
+      // 3. Enrich the original keywords list
+      const originalKeywords = campaign_details?.results?.[0]?.keywords || [];
+      const mergedKeywords = originalKeywords.map((keyword) => {
+        const campaignBids = campaignDetailsMap.get(keyword.campaign_id);
+        if (campaignBids) {
+          const customBid = campaignBids.custom_bids.get(keyword.keyword);
+          const bidToApply = customBid || null;
+          return {
+            ...keyword,
+            bid: bidToApply,
+          };
+        }
+        return keyword;
+      });
+
+      // 4. Replace the original data with the newly enriched data
       if (campaign_details?.results?.[0]) {
         campaign_details.results[0].campaigns = mergedCampaigns;
+        campaign_details.results[0].keywords = mergedKeywords;
       }
       // --- End of Data Merging Logic ---
     }
-    return;
 
-    console.log(campaign_details, "<<< campaign_details");
     if (campaign_details) {
       const entityInsertMap = getEntityInsertMapFromConfig(STRUCTURE_CONFIG);
 
