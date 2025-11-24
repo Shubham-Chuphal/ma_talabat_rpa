@@ -169,6 +169,7 @@ const campaignController = {
               value: campaign.value,
               error: err,
             }),
+            status:err.status,
             action: campaign.action,
           });
         }
@@ -211,8 +212,8 @@ function getErrorMessage({
   // Extract the best error message
   let errorMessage = "Unknown error";
 
-  if (error?.response?.data?.msg) {
-    errorMessage = error.response.data.msg;
+  if (error?.response?.data?.message) {
+    errorMessage = error.response.data.message;
   } else if (error?.message) {
     errorMessage = error.message;
   } else if (typeof error === "string") {

@@ -99,7 +99,9 @@ const keywordController = {
         );
 
         // ✅ Validate single keyword
-        validateKeywordOperation(campaignDetails, targetValue, actionKey);
+        if(actionKey !== "bid"){
+          validateKeywordOperation(campaignDetails, targetValue, actionKey);
+        }
 
         // ✅ Step 2: Build payload
         const inputData = prepareKeywordPayloadInput(
@@ -158,7 +160,8 @@ const keywordController = {
           campaign_id: item?.campaign_id,
           targetValue: item?.targetValue,
           success: false,
-          message: `Error: ${err.message}`,
+          message: `Error: ${err.response.data.message}`,
+          status:err.status
         });
       }
     }
@@ -185,7 +188,7 @@ function validateKeywordOperation(campaignDetails, keyword, action) {
     campaignDetails?.data?.promotion?.search?.keywords || [];
 
   const normalizedList = list.map(k => k.trim().toLowerCase());
-  const normalized = keyword.trim().toLowerCase();
+  const normalized = keyword?.trim()?.toLowerCase();
 
   const exists = normalizedList.includes(normalized);
 
