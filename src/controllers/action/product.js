@@ -129,7 +129,7 @@ const productController = {
           
           results.push({
             campaign_id,
-            campaign_name: campaignDetails.data?.promotion?.name,
+            campaign_name: campaignDetails?.data?.promotion?.name,
             product_name: product_search_term,
             success: true,
             message: `Action "${actionKey}" completed for product: ${product_search_term}`,
