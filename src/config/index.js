@@ -13,7 +13,7 @@ try {
 }
 
 const config = {
-  port: process.env.PORT || 5000,
+  port: process.env.PORT || 7000,
   local_development: process.env.LOCAL_DEV_MODE === "true",
   env: process.env.NODE_ENV || "development",
   apiDebug: process.env.DEBUG_API_RESPONSES === "true",

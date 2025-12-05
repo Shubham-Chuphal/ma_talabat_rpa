@@ -342,53 +342,125 @@ const ACTION_CONFIG = {
   typeSuffixUrl: {
     "product ad": {
       campaign: {
-        campaign_details: "_svc/mx-instant-api-plamanager/pla/campaign/details",
-        negative_keyword_list:
-          "_svc/mx-instant-api-plamanager/pla/campaign/negative-keyword/list",
-
+        campaign_details: {
+          url: "campaigns/:campaign_id",
+          method: "GET",
+        },
         update_name: {
-          preCheckUrl:
-            "_svc/mx-instant-api-plamanager/pla/campaign-name/is-exist",
-          url: "_svc/mx-instant-api-plamanager/pla/campaign/update-name",
+          preCheckUrl: "campaigns/:campaign_id",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
         status: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign/set-is-active",
+          url: "campaigns/:campaign_id/status",
+          method: "PATCH",
         },
         budget: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign/inline-action",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        daily_budget: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        cpm_bid: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
         change_date: {
-          preFetchRequired: true,
-          url: "_svc/mx-instant-api-plamanager/pla/campaign/update",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
-        // For negative keywords update (add/remove computed in controller)
-        add_negative: {
-          preFetchRequired: true,
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-negative-keyword/update",
-        },
-        remove_negative: {
-          preFetchRequired: true,
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-negative-keyword/update",
+        day_parting: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
       },
       product: {
         enable: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-sku/enable",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
         disable: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-sku/disable",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
       },
 
       keyword: {
         bid: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-target/edit-bid",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
         disable: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-target/disable",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
         enable: {
-          url: "_svc/mx-instant-api-plamanager/pla/campaign-target/enable",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+      },
+    },
+    "display ad": {
+      campaign: {
+        campaign_details: {
+          url: "campaigns/:campaign_id",
+          method: "GET",
+        },
+        update_name: {
+          preCheckUrl: "campaigns/:campaign_id",
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        status: {
+          url: "campaigns/:campaign_id/status",
+          method: "PATCH",
+        },
+        budget: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        daily_budget: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        cpm_bid: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        change_date: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        day_parting: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+      },
+      product: {
+        enable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        disable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+      },
+
+      keyword: {
+        bid: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        disable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
+        },
+        enable: {
+          url: "campaigns/:campaign_id",
+          method: "PUT",
         },
       },
     },
@@ -396,17 +468,32 @@ const ACTION_CONFIG = {
 
   payloadMap: {
     "product ad": "productAdPayload",
+    "display ad": "displayAdPayload",
   },
 
   allowedActions: {
     "product ad": {
       campaign: [
         "budget",
+        "daily_budget",
+        "cpm_bid",
         "status",
         "change_date",
         "update_name",
-        "add_negative",
-        "remove_negative",
+        "day_parting",
+      ],
+      product: ["enable", "disable"],
+      keyword: ["bid", "disable", "enable"],
+    },
+    "display ad": {
+      campaign: [
+        "budget",
+        "daily_budget",
+        "cpm_bid",
+        "status",
+        "change_date",
+        "update_name",
+        "day_parting",
       ],
       product: ["enable", "disable"],
       keyword: ["bid", "disable", "enable"],
@@ -417,124 +504,219 @@ const ACTION_CONFIG = {
     "product ad": {
       campaign: {
         budget: {
-          buildPayload: ({ code, amount }) => ({
-            categoryKey: "edit_budget",
-            actionKey: "set_daily_budget",
-            code,
-            payload: {
-              daily_budget_local: amount,
-              amount,
-            },
-          }),
-          message: ({ amount, campaign_id }) =>
-            `Budget updated to ${amount} for campaign ID ${campaign_id}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure (from transformCampaignForPut), return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              categoryKey: "edit_budget",
+              actionKey: "Total_budget",
+              code: payload.code,
+              payload: {
+                daily_budget_local: payload.amount,
+                amount: payload.amount,
+              },
+            };
+          },
+          message: ({ amount, campaign_id, pricing }) =>
+            `Budget updated to ${amount || pricing?.budget?.total} for campaign ID ${campaign_id}`,
+        },
+         daily_budget: {
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure (from transformCampaignForPut), return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              categoryKey: "edit_budget",
+              actionKey: "Daily_budget",
+              code: payload.code,
+              payload: {
+                daily_budget_local: payload.amount,
+                amount: payload.amount,
+              },
+            };
+          },
+          message: ({ amount, campaign_id, pricing }) =>
+            `Daily budget updated to ${amount || pricing?.budget?.daily} for campaign ID ${campaign_id}`,
+        },
+         cpm_bid: {
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure (from transformCampaignForPut), return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              categoryKey: "edit_budget",
+              actionKey: "Cpm_bid",
+              code: payload.code,
+              payload: {
+                daily_budget_local: payload.amount,
+                amount: payload.amount,
+              },
+            };
+          },
+          message: ({ amount, campaign_id, pricing }) =>
+            `CPM Bid updated to ${amount || pricing?.default_bid} for campaign ID ${campaign_id}`,
         },
 
         status: {
-          buildPayload: ({ campaignCode, isActive }) => ({
-            campaignCode,
-            isActive,
+          buildPayload: ({ status }) => ({
+            status: status ? status : null
           }),
-          message: ({ isActive, campaign_id }) =>
-            `Campaign ${campaign_id} is now ${isActive ? "Active" : "Paused"}`,
+          message: ({ status, campaign_id }) =>
+            `Campaign ${campaign_id} is now ${status === "active" ? "Active" : status === "paused" ? "Paused" : status === "cancelled" ? "Cancelled" : status}`,
         },
 
         change_date: {
-          buildPayload: ({
-            campaignName,
-            campaignCode,
-            dailyBudgetLocal,
-            localStartDate,
-            localEndDate,
-          }) => ({
-            campaignName,
-            portfolioName: null,
-            dailyBudgetLocal,
-            topSlotBidPercent: 0,
-            localStartDate,
-            localEndDate,
-            searchMatchType: "manual",
-            isActive: true,
-            campaignCode,
-          }),
-          message: ({ campaign_id }) =>
-            `Campaign dates updated successfully for campaign ID ${campaign_id}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure (from transformCampaignForPut), return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignName: payload.campaignName,
+              portfolioName: null,
+              dailyBudgetLocal: payload.dailyBudgetLocal,
+              topSlotBidPercent: 0,
+              localStartDate: payload.localStartDate,
+              localEndDate: payload.localEndDate,
+              searchMatchType: "manual",
+              isActive: true,
+              campaignCode: payload.campaignCode,
+            };
+          },
+          message: ({ campaign_id, end_at }) =>
+            `Campaign dates updated successfully for campaign ID ${campaign_id}${end_at ? ` (end date: ${end_at})` : ' (always on)'}`,
         },
 
         update_name: {
-          buildPayload: ({ campaignName }) => ({
-            campaignName,
-          }),
-          message: ({ campaignName, campaign_id }) =>
-            `Campaign name updated to "${campaignName}" for campaign ID ${campaign_id}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure (from transformCampaignForPut), return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignName: payload.campaignName,
+            };
+          },
+          message: ({ campaignName, campaign_id, name }) =>
+            `Campaign name updated to "${name || campaignName}" for campaign ID ${campaign_id}`,
         },
+         day_parting: {
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure (from transformCampaignForPut), return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignName: payload.campaignName,
+            };
+          },
+          message: ({ campaignName, campaign_id, targeting }) =>
+            // `Day parting action updated to "${targeting.schedules || campaignName}" for campaign ID ${campaign_id}`,
+            `Day parting action updated for campaign ID ${campaign_id}`,
 
-        add_negative: {
-          buildPayload: ({ campaignCode, negativeKeywords }) => ({
-            campaignCode,
-            negativeKeywords,
-          }),
-          message: ({ campaignCode, negativeKeywords }) =>
-            `Updated negative keywords for campaign ${campaignCode}. New list: ${
-              Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
-            }`,
-        },
-        remove_negative: {
-          buildPayload: ({ campaignCode, negativeKeywords }) => ({
-            campaignCode,
-            negativeKeywords,
-          }),
-          message: ({ campaignCode, negativeKeywords }) =>
-            `Updated negative keywords for campaign ${campaignCode}. New list: ${
-              Array.isArray(negativeKeywords) ? negativeKeywords.join(", ") : ""
-            }`,
         },
       },
 
       product: {
         enable: {
-          buildPayload: ({ campaignCode, sku }) => ({ campaignCode, sku }),
-          message: ({ sku, campaignCode }) =>
-            `SKU ${sku} enabled successfully for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              sku: payload.sku,
+            };
+          },
+          message: ({ productsList }) => {
+            return ` The updated products list: "${productsList}"`;
+          },
         },
         disable: {
-          buildPayload: ({ campaignCode, sku }) => ({ campaignCode, sku }),
-          message: ({ sku, campaignCode }) =>
-            `SKU ${sku} disabled successfully for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              sku: payload.sku,
+            };
+          },
+          message: ({  productsList }) => {
+            return `The updated products list: "${productsList}"`;
+          },
         },
       },
 
       keyword: {
         bid: {
-          // input: { campaignCode, targetType, targetValue, bid }
-          buildPayload: ({ campaignCode, targetType, targetValue, bid }) => ({
-            campaignCode,
-            targetType,
-            targetValue,
-            bid,
-          }),
-          message: ({ campaignCode, targetValue, bid }) =>
-            `Keyword ${targetValue} bid set to ${bid} for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              targetType: payload.targetType,
+              targetValue: payload.targetValue,
+              bid: payload.bid,
+            };
+          },
+          message: ({ campaignCode, keywordsList, keywordCount, bid }) => {
+            if (keywordCount > 1) {
+              return `Bid set to ${bid} for ${keywordCount} keywords: "${keywordsList}" in campaign ${campaignCode}`;
+            }
+            return `Keyword "${keywordsList}" bid set to ${bid} for campaign ${campaignCode}`;
+          },
         },
         disable: {
-          // input: { campaignCode, targetType, targetValue }
-          buildPayload: ({ campaignCode, targetType, targetValue }) => ({
-            campaignCode,
-            targetType,
-            targetValue,
-          }),
-          message: ({ campaignCode, targetValue }) =>
-            `Keyword ${targetValue} disabled for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              targetType: payload.targetType,
+              targetValue: payload.targetValue,
+            };
+          },
+          message: ({ campaign_id, keywordsList }) => {   
+            return `The updated keyword list: "${keywordsList}" for campaign ${campaign_id}`;
+          },
         },
         enable: {
-          // same payload as disable
-          buildPayload: ({ campaignCode, targetType, targetValue }) => ({
-            campaignCode,
-            targetType,
-            targetValue,
-          }),
-          message: ({ campaignCode, targetValue }) =>
-            `Keyword ${targetValue} enabled for campaign ${campaignCode}`,
+          buildPayload: (payload) => {
+            // If payload has the full campaign structure, return as-is
+            if (payload.name && payload.promotion && payload.pricing) {
+              return payload;
+            }
+            // Legacy format fallback
+            return {
+              campaignCode: payload.campaignCode,
+              targetType: payload.targetType,
+              targetValue: payload.targetValue,
+            };
+          },
+          message: ({ campaign_id, keywordsList }) => {
+            return `The updated keyword list: "${keywordsList}" for campaign ${campaign_id}`;
+          },
         },
       },
     },

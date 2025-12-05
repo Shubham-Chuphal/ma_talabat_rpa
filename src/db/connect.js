@@ -70,7 +70,7 @@ const initializeDB = async ({
 
 async function connectCommon() {
   let commonConfig;
-
+  
   if (config.env === "development") {
     commonConfig = {
       pgsql_url: config.pgsql.host,
@@ -94,9 +94,9 @@ async function connectCommon() {
       port: commonConfig.pgsql_port,
       database: commonConfig.pgsql_database,
       username: commonConfig.pgsql_user,
-      password: commonConfig.pgsql_password,
+      password: String(commonConfig.pgsql_password || ""),
       modelDir: path.join(__dirname, "../models/common"),
-      ssl: true,
+      ssl: false,
     });
   }
 
@@ -141,9 +141,9 @@ async function connectClient(dbName) {
         port: dbConfig.pgsql_port,
         database: dbConfig.pgsql_database,
         username: dbConfig.pgsql_user,
-        password: dbConfig.pgsql_password,
+        password: String(dbConfig.pgsql_password || ""),
         modelDir: path.join(__dirname, "../models/psql"),
-        ssl: true,
+        ssl: false,
       });
     } else {
       connections.postgres = connection[key];
@@ -176,16 +176,16 @@ async function connectClient(dbName) {
  * @param {string} clientId
  * @returns {Promise<{ commonDB, postgres, mysql }>}
  */
-async function getConnectedDatabases(client_id) {
+async function getConnectedDatabases(clientId) {
   const commonDB = await connectCommon();
   const clientInfo = await commonDB.models.e_genie_client.findOne({
-    where: { client_id },
+    where: { client_id: clientId },
     raw: true,
   });
   const dbName = clientInfo?.db_name;
   // console.log("client-info", clientInfo);
   if (!dbName) {
-    throw new Error(`DB not found for clientId: ${client_id}`);
+    throw new Error(`DB not found for clientId: ${clientId}`);
   }
 
   const { postgres, mysql } = await connectClient(dbName);

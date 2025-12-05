@@ -66,9 +66,14 @@ const campaignController = {
           }
           const typeUrl = actionConfig.typeSuffixUrl[typeKey]?.["campaign"];
           // console.log("typeUrl:", typeUrl);
-          const action_url = getApiUrl(typeUrl?.[action]?.url);
-          const details_url = getApiUrl(typeUrl?.campaign_details);
-          const negative_list_url = getApiUrl(typeUrl?.negative_keyword_list);
+          
+          // Replace :campaign_id placeholder in URL if present
+          let actionUrlSuffix = typeUrl?.[action]?.url || "";
+          actionUrlSuffix = actionUrlSuffix.replace(":campaign_id", campaign_id);
+          
+          const action_url = getApiUrl(actionUrlSuffix, clientId);
+          const details_url = getApiUrl(typeUrl?.campaign_details, clientId);
+          const negative_list_url = getApiUrl(typeUrl?.negative_keyword_list, clientId);
 
           const payloadFn =
             actionConfig.payloadTemplates[typeKey]?.["campaign"]?.[action];
@@ -81,24 +86,21 @@ const campaignController = {
 
           // Step 1: Pre-fetch campaign details (optional)
           let campaignDetails = {};
-          if (typeUrl?.[action].preFetchRequired) {
-            // Choose URL based on action
-            const isNegAction =
-              action === "add_negative" || action === "remove_negative";
-            const urlToFetch =
-              isNegAction && negative_list_url
-                ? negative_list_url
-                : details_url;
-
-            // Use common retry + cookie renewal handler
+          
+          // Actions that require GET campaign details first
+          const requiresGetDetails = ["update_name", "budget", "change_date","daily_budget","cpm_bid","day_parting"];
+          
+          if (requiresGetDetails.includes(action)) {
+            // Fetch full campaign details using GET
+            const getDetailsUrl = typeUrl?.campaign_details?.url?.replace(":campaign_id", campaign_id);
+            const fullDetailsUrl = getApiUrl(getDetailsUrl, clientId);
+            
             campaignDetails = await requestWithCookieRenewal(
-              fetchCampaignDetails, // API fn
-              [urlToFetch, campaign_id], // args for fetchCampaignDetails
-              { tokenMap, storeKey, clientId } // options needed for retry & cookie renewal
+              fetchCampaignDetails,
+              [fullDetailsUrl, campaign_id, "GET"], // Pass method as third argument
+              { tokenMap, storeKey, clientId }
             );
-          }
-
-          console.log("campaignDetails:", campaignDetails);
+          } 
 
           // Step 2: Prepare input for payload
           const inputData = preparePayloadInput(
@@ -126,14 +128,17 @@ const campaignController = {
           // Step 4: Generate payload
           const payload = payloadFn?.buildPayload(inputData);
           // console.log("payload:,", payload);
+          
           // Step 5: Call API
+          const httpMethod = typeUrl?.[action]?.method || "POST";
           await actionApiCall(action_url, payload, {
             storeKey,
             tokenMap,
             clientId,
+            method: httpMethod,
           });
-          // Handle success message
 
+          // Handle success message
           results.push({
             campaign_id,
             success: true,
@@ -164,6 +169,7 @@ const campaignController = {
               value: campaign.value,
               error: err,
             }),
+            status:err.status,
             action: campaign.action,
           });
         }
@@ -206,8 +212,8 @@ function getErrorMessage({
   // Extract the best error message
   let errorMessage = "Unknown error";
 
-  if (error?.response?.data?.msg) {
-    errorMessage = error.response.data.msg;
+  if (error?.response?.data?.message) {
+    errorMessage = error.response.data.message;
   } else if (error?.message) {
     errorMessage = error.message;
   } else if (typeof error === "string") {

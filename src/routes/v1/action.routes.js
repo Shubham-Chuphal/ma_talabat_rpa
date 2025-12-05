@@ -6,6 +6,7 @@ const { authCheck } = require("../../middlewares/errorHandler");
 const campaignController = require("../../controllers/action/campaign");
 const keywordController = require("../../controllers/action/keyword");
 const productController = require("../../controllers/action/product");
+const { fetchTalabatCookies } = require("../../utils/getCookies");
 
 // Campaign routes
 router.route("/campaign/edit").post(authCheck, campaignController.editCampaign);

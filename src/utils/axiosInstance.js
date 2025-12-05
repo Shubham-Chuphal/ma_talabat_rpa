@@ -9,10 +9,11 @@ axiosInstance.interceptors.request.use(
   (config) => {
     if (config.cookieString) {
       const excludeHeaders = config.excludeHeaders || [];
+      const isGetRequest = (config.method || "").toUpperCase() === "GET";
       config.headers = getTalabatApiHeaders(
         config.cookieString,
         config.headers || {},
-        { excludeHeaders }
+        { excludeHeaders, isGetRequest }
       );
       // Optional DEBUG logging of cookie fingerprint and request info
       if (process.env.DEBUG === "true") {

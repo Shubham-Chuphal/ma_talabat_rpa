@@ -1,9 +1,16 @@
-const { config } = require("../config");
+const { config, getTalabatBaseUrlForClient } = require("../config");
 const axiosInstance = require("../utils/axiosInstance");
 const { requestWithCookieRenewal } = require("../utils/requestHandler");
 
-function getApiUrl(suffix) {
-  return `${config.talabat.apiUrl}${suffix}`;
+function getApiUrl(suffix, clientId = null) {
+  // If clientId is provided, use client-specific config
+  if (clientId) {
+    const { baseUrl, entityCode } = getTalabatBaseUrlForClient(clientId);
+    return `${baseUrl}${entityCode}/${suffix}`;
+  }
+  
+  // Fallback to old behavior if no clientId
+  return `${config.talabat.apiUrl || ""}${suffix}`;
 }
 
 /**
@@ -15,11 +22,11 @@ function getApiUrl(suffix) {
  */
 
 async function actionApiCall(url, payload, options = {}) {
-  const { storeKey, tokenMap, retryCount = 3, clientId } = options;
-
+  const { storeKey, tokenMap, retryCount = 3, clientId, method = "POST" } = options;
+  const cookie = tokenMap?.[storeKey];
   return await requestWithCookieRenewal(
-    async (url, payload, cookie) => {
-      const response = await axiosInstance.post(url, payload, {
+    async (url, payload, method, cookie) => {
+      const axiosConfig = {
         cookieString: cookie,
         excludeHeaders: [
           "Origin",
@@ -31,14 +38,25 @@ async function actionApiCall(url, payload, options = {}) {
           "Content-Type": "application/json;charset=UTF-8",
           Accept: "application/json, text/plain, */*",
         },
-      });
+      };
+
+      let response;
+      const httpMethod = method.toUpperCase();
+      
+      if (httpMethod === "PATCH") {
+        response = await axiosInstance.patch(url, payload, axiosConfig);
+      } else if (httpMethod === "PUT") {
+        response = await axiosInstance.put(url, payload, axiosConfig);
+      } else {
+        response = await axiosInstance.post(url, payload, axiosConfig);
+      }
 
       if (response.status != 200) {
         throw new Error(response.data.msg || "Talabat API request failed");
       }
       return response.data;
     },
-    [url, payload],
+    [url, payload, method],
     { storeKey, tokenMap, retryCount, clientId }
   );
 }
