@@ -1,22 +1,15 @@
 const {
   formatCampaignRow,
   formatProductRow,
-  formatCategoryRow,
+  // formatCategoryRow,
   formatKeywordRow,
-  formatSlotRow,
+  // formatSlotRow,
   formatCampaignAttributionRow,
   formatProductAttributionRow,
-  formatCategoryAttributionRow,
   formatKeywordAttributionRow,
+  formatCategoryAttributionRow,
   formatSlotAttributionRow,
 } = require("../services/rowFormatters");
-
-const getLocalDateRange = (date) => {
-  return {
-    localStartDate: `${date}T23:59:59+05:30`,
-    localEndDate: `${date}T23:59:59+05:30`,
-  };
-};
 
 const STRUCTURE_CONFIG = [
   {
@@ -47,12 +40,7 @@ const STRUCTURE_CONFIG = [
             subUrl: "performance/products",
             method: "POST",
             getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 50,
-                page: 0,
-                start_date,
-                end_date,
-              },
+              params: { size: 50, page: 0, start_date, end_date },
               data: {
                 account_ids: [accountId],
                 campaign_ids: [campaignId],
@@ -62,39 +50,26 @@ const STRUCTURE_CONFIG = [
             outputKey: "products",
             dataExtractor: (data) => data?.data || [],
             format: formatProductRow,
-          },
-          {
-            type: "Categories",
-            subUrl: "performance/categories",
-            method: "POST",
-            getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 50,
-                page: 0,
-                start_date,
-                end_date,
-              },
-              data: {
-                account_ids: [accountId],
-                campaign_ids: [campaignId],
-              },
-            }),
-            model: "talabat_categories",
-            outputKey: "categories",
-            dataExtractor: (data) => data?.data || [],
-            format: formatCategoryRow,
+            deleteWhere: ({ rows, db }) => {
+              const Op = db.Op;
+              const accountIds = Array.from(
+                new Set(rows.map((r) => r.account_id).filter(Boolean))
+              );
+              if (accountIds.length === 0) return null;
+              return {
+                [Op.and]: [
+                  { account_id: { [Op.in]: accountIds } },
+                  { [Op.or]: [{ status: "active" }, { status: null }] },
+                ],
+              };
+            },
           },
           {
             type: "Keywords",
             subUrl: "performance/keywords",
             method: "POST",
             getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 50,
-                page: 0,
-                start_date,
-                end_date,
-              },
+              params: { size: 50, page: 0, start_date, end_date },
               data: {
                 account_ids: [accountId],
                 campaign_ids: [campaignId],
@@ -104,8 +79,34 @@ const STRUCTURE_CONFIG = [
             outputKey: "keywords",
             dataExtractor: (data) => data?.data || [],
             format: formatKeywordRow,
+            deleteWhere: ({ rows, db }) => {
+              const Op = db.Op;
+              const accountIds = Array.from(
+                new Set(rows.map((r) => r.account_id).filter(Boolean))
+              );
+              if (accountIds.length === 0) return null;
+              return {
+                [Op.and]: [
+                  { account_id: { [Op.in]: accountIds } },
+                  { [Op.or]: [{ status: "active" }, { status: null }] },
+                ],
+              };
+            },
           },
         ],
+      },
+    ],
+  },
+  {
+    "Custom Data": [
+      {
+        // This subUrl will be overridden in the controller, but we keep the block here.
+        subUrl: "",
+        method: "GET",
+        getPayload: () => ({}),
+        model: "talabat_campaigns",
+        dataExtractor: (data) => data || [],
+        format: (row) => row,
       },
     ],
   },
@@ -132,48 +133,52 @@ const STRUCTURE_CONFIG = [
         format: formatCampaignRow,
 
         otherFetch: [
-          {
-            type: "Categories",
-            subUrl: "performance/categories",
-            method: "POST",
-            getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 1000,
-                page: 0,
-                start_date,
-                end_date,
-              },
-              data: {
-                account_ids: [accountId],
-                campaign_ids: [campaignId],
-              },
-            }),
-            model: "talabat_categories",
-            outputKey: "categories",
-            dataExtractor: (data) => data?.data || [],
-            format: formatCategoryRow,
-          },
-          {
-            type: "Slots",
-            subUrl: "performance/slots",
-            method: "POST",
-            getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 1000,
-                page: 0,
-                start_date,
-                end_date,
-              },
-              data: {
-                account_ids: [accountId],
-                campaign_ids: [campaignId],
-              },
-            }),
-            model: "talabat_slots",
-            outputKey: "slots",
-            dataExtractor: (data) => data?.data || [],
-            format: formatSlotRow,
-          },
+          // {
+          //   type: "Categories",
+          //   subUrl: "performance/categories",
+          //   method: "POST",
+          //   getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
+          //     params: {
+          //       size: 1000,
+          //       page: 0,
+          //       start_date,
+          //       end_date,
+          //     },
+          //     data: {
+          //       account_ids: [accountId],
+          //       campaign_ids: [campaignId],
+          //       ad_format: "display_ad",
+          //       placements: [],
+          //     },
+          //   }),
+          //   model: "talabat_sub_category",
+          //   outputKey: "categories",
+          //   dataExtractor: (data) => data?.data || [],
+          //   format: formatCategoryRow,
+          // },
+          // {
+          //   type: "Slots",
+          //   subUrl: "performance/slots",
+          //   method: "POST",
+          //   getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
+          //     params: {
+          //       size: 1000,
+          //       page: 0,
+          //       start_date,
+          //       end_date,
+          //     },
+          //     data: {
+          //       account_ids: [accountId],
+          //       campaign_ids: [campaignId],
+          //       ad_format: "display_ad",
+          //       placements: [],
+          //     },
+          //   }),
+          //   model: "talabat_slots",
+          //   outputKey: "slots",
+          //   dataExtractor: (data) => data?.data || [],
+          //   format: formatSlotRow,
+          // },
         ],
       },
     ],
@@ -184,11 +189,11 @@ const ATTRIBUTION_CONFIG = [
   {
     "Product Ads": [
       {
-        subUrl: "_svc/mx-instant-api-plamanager/pla/v3/campaign/list",
+        subUrl: "performance/campaigns",
         method: "POST",
         getPayload: ({ start_date, end_date, accountId }) => ({
           params: {
-            size: 1000,
+            size: 50,
             page: 0,
             start_date,
             end_date,
@@ -206,15 +211,10 @@ const ATTRIBUTION_CONFIG = [
         otherFetch: [
           {
             type: "Products",
-            subUrl: "_svc/mx-instant-api-plamanager/pla/campaign/product/list",
+            subUrl: "performance/products",
             method: "POST",
             getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 1000,
-                page: 0,
-                start_date,
-                end_date,
-              },
+              params: { size: 50, page: 0, start_date, end_date },
               data: {
                 account_ids: [accountId],
                 campaign_ids: [campaignId],
@@ -227,42 +227,32 @@ const ATTRIBUTION_CONFIG = [
           },
           {
             type: "Categories",
-            subUrl: "_svc/mx-instant-api-plamanager/pla/campaign/category/list",
+            subUrl: "performance/categories",
             method: "POST",
             getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 1000,
-                page: 0,
-                start_date,
-                end_date,
-              },
+              params: { size: 50, page: 0, start_date, end_date },
               data: {
                 account_ids: [accountId],
                 campaign_ids: [campaignId],
               },
             }),
-            model: "talabat_categories_report_data",
+            model: "talabat_sub_category_report_data", // align with model file
             outputKey: "categories",
             dataExtractor: (data) => data?.data || [],
             format: formatCategoryAttributionRow,
           },
           {
             type: "Keywords",
-            subUrl: "_svc/mx-instant-api-plamanager/pla/campaign/target/list",
+            subUrl: "performance/keywords",
             method: "POST",
             getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
-              params: {
-                size: 1000,
-                page: 0,
-                start_date,
-                end_date,
-              },
+              params: { size: 50, page: 0, start_date, end_date },
               data: {
                 account_ids: [accountId],
                 campaign_ids: [campaignId],
               },
             }),
-            model: "talabat_target_report_data",
+            model: "talabat_keyword_report_data",
             outputKey: "keywords",
             dataExtractor: (data) => data?.data || [],
             format: formatKeywordAttributionRow,
@@ -274,7 +264,7 @@ const ATTRIBUTION_CONFIG = [
   {
     "Display Ads": [
       {
-        subUrl: "_svc/mx-instant-api-externaladsmanager/campaign/list",
+        subUrl: "performance/campaigns",
         method: "POST",
         getPayload: ({ start_date, end_date, accountId }) => ({
           params: {
@@ -296,8 +286,7 @@ const ATTRIBUTION_CONFIG = [
         otherFetch: [
           {
             type: "Categories",
-            subUrl:
-              "_svc/mx-instant-api-externaladsmanager/campaign/product/list",
+            subUrl: "performance/categories",
             method: "POST",
             getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
               params: {
@@ -309,17 +298,18 @@ const ATTRIBUTION_CONFIG = [
               data: {
                 account_ids: [accountId],
                 campaign_ids: [campaignId],
+                ad_format: "display_ad",
+                placements: [],
               },
             }),
-            model: "talabat_product_report_data",
+            model: "talabat_sub_category_report_data",
             outputKey: "categories",
             dataExtractor: (data) => data?.data || [],
-            format: formatProductAttributionRow,
+            format: formatCategoryAttributionRow,
           },
           {
             type: "Slots",
-            subUrl:
-              "_svc/mx-instant-api-externaladsmanager/campaign/source/list",
+            subUrl: "performance/slots",
             method: "POST",
             getPayload: ({ campaignId, start_date, end_date, accountId }) => ({
               params: {
@@ -331,6 +321,8 @@ const ATTRIBUTION_CONFIG = [
               data: {
                 account_ids: [accountId],
                 campaign_ids: [campaignId],
+                ad_format: "display_ad",
+                placements: [],
               },
             }),
             model: "talabat_slot_report_data",

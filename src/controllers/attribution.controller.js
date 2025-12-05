@@ -1,6 +1,7 @@
 const { getConnectedDatabases } = require("../db/connect");
 const { getDateRangeArray } = require("../services");
 const { getCampaignsDetails } = require("../services/pollExportData");
+const { getTalabatBaseUrlForClient } = require("../config");
 const {
   convertRowsToCsv,
   uploadCsvToS3,
@@ -21,7 +22,7 @@ exports.populateAttribution = async (req, res) => {
   writeDebugLog("", "debug_attribution.txt", "w");
   const clientId = req.query.clientId || req.body.clientId;
   const { start_date, end_date } = req.body;
-  const platformId = "9";
+  const platformId = "10";
   if (!start_date || !end_date || !clientId) {
     return res
       .status(400)
@@ -63,19 +64,24 @@ exports.populateAttribution = async (req, res) => {
 
     const attributionResults = [];
 
+    // Resolve Talabat API base URL and entity code for this client
+    const { baseUrl, entityCode } = getTalabatBaseUrlForClient(clientId);
+
     for (const date of dateRangeArr) {
-      logger(`[Talabat][Structure] Processing date: ${date}`);
+      logger(`[Talabat][Attribution] Processing date: ${date}`);
+      const dateRange = { start_date: date, end_date: date };
       const attributions = await getCampaignsDetails(
         cookieString,
         brandLookup,
         clientId,
         [],
         ATTRIBUTION_CONFIG,
-        date,
-        logger
+        dateRange,
+        logger,
+        { baseUrl, entityCode }
       );
       logger(
-        `[Talabat][Structure] Completed fetching for date: ${date}, Total Stores Processed: ${
+        `[Talabat][Attribution] Completed fetching for date: ${date}, Total Stores Processed: ${
           attributions?.results?.length || 0
         }`
       );
@@ -88,10 +94,10 @@ exports.populateAttribution = async (req, res) => {
         attributionResults.push(...datedResults);
 
         logger(
-          `[Talabat][Structure] Merged results for date: ${date}, Total Accumulated: ${attributionResults.length}`
+          `[Talabat][Attribution] Merged results for date: ${date}, Total Accumulated: ${attributionResults.length}`
         );
       } else {
-        logger(`[Talabat][Structure] No results found for date: ${date}`);
+        logger(`[Talabat][Attribution] No results found for date: ${date}`);
       }
     }
 
@@ -99,7 +105,7 @@ exports.populateAttribution = async (req, res) => {
 
     const entityInsertMap = getEntityInsertMapFromConfig(ATTRIBUTION_CONFIG);
     logger(
-      `[Talabat][Structure] Entity Insert Map: ${JSON.stringify(
+      `[Talabat][Attribution] Entity Insert Map: ${JSON.stringify(
         entityInsertMap
       )}`
     );
@@ -121,7 +127,7 @@ exports.populateAttribution = async (req, res) => {
         const rows = flattenByKey(mergedAttributions.results, key);
 
         logger(
-          `[Talabat][Structure] Preparing ${rows.length} rows for model: ${model}`
+          `[Talabat][Attribution] Preparing ${rows.length} rows for model: ${model}`
         );
 
         if (rows.length > 0) {
@@ -131,7 +137,9 @@ exports.populateAttribution = async (req, res) => {
           // Upload to S3 first
           await uploadCsvToS3(csvContent, dbName, model);
 
-          logger(`[Talabat][Structure] Uploaded CSV to S3 for model: ${model}`);
+          logger(
+            `[Talabat][Attribution] Uploaded CSV to S3 for model: ${model}`
+          );
 
           // Insert into DB after upload success
           await insertDataWithDeletion({
@@ -149,10 +157,10 @@ exports.populateAttribution = async (req, res) => {
           });
 
           logger(
-            `[Talabat][Structure] Inserted ${rows.length} rows into DB for model: ${model}`
+            `[Talabat][Attribution] Inserted ${rows.length} rows into DB for model: ${model}`
           );
         } else {
-          logger(`[Talabat][Structure] No data found for model: ${model}`);
+          logger(`[Talabat][Attribution] No data found for model: ${model}`);
         }
       }
     });

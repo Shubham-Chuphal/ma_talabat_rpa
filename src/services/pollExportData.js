@@ -7,10 +7,10 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // Single-flight guard for cookie refresh per clientId
 const cookieRefreshInFlight = new Map(); // clientId -> Promise<Array<Object>>
 
-// Adaptive throttling state
+// Adaptive throttling state (Talabat)
 let recent429At = 0; // timestamp of last 429
 const THROTTLE_WINDOW_MS = parseInt(
-  process.env.NOON_THROTTLE_WINDOW_MS || "20000",
+  process.env.TALABAT_THROTTLE_WINDOW_MS || "20000",
   10
 );
 
@@ -18,41 +18,54 @@ function isSlowMode() {
   return Date.now() - recent429At < THROTTLE_WINDOW_MS;
 }
 
+// Ensure dates are logged as readable strings
+function fmtDate(d) {
+  if (typeof d === "string") return d;
+  try {
+    if (d && typeof d.toISOString === "function") return d.toISOString();
+  } catch (_) {}
+  try {
+    return JSON.stringify(d);
+  } catch (_) {
+    return String(d);
+  }
+}
+
 // Global request gate with AIMD tuning
-let currentGlobalReqLimit = 3; // initial capacity (moderate)
+let currentGlobalReqLimit = 2; // initial capacity (moderate)
 let globalReqInFlight = 0;
 const globalReqQueue = [];
-let currentMinReqIntervalMs = 300; // pacing between starts (moderate)
+let currentMinReqIntervalMs = 450; // pacing between starts (moderate)
 let nextGlobalAvailableAt = 0;
 
-const TUNE_GRC_FLOOR = parseInt(process.env.NOON_TUNE_GRC_FLOOR || "3", 10);
-const TUNE_GRC_CEIL = parseInt(process.env.NOON_TUNE_GRC_CEIL || "6", 10);
+const TUNE_GRC_FLOOR = parseInt(process.env.TALABAT_TUNE_GRC_FLOOR || "2", 10);
+const TUNE_GRC_CEIL = parseInt(process.env.TALABAT_TUNE_GRC_CEIL || "4", 10);
 const TUNE_MRI_FLOOR_MS = parseInt(
-  process.env.NOON_TUNE_MRI_FLOOR_MS || "150",
+  process.env.TALABAT_TUNE_MRI_FLOOR_MS || "300",
   10
 );
 const TUNE_MRI_CEIL_MS = parseInt(
-  process.env.NOON_TUNE_MRI_CEIL_MS || "350",
+  process.env.TALABAT_TUNE_MRI_CEIL_MS || "800",
   10
 );
 const TUNE_STEP_UP_INTERVAL_MS = parseInt(
-  process.env.NOON_TUNE_STEP_UP_INTERVAL_MS || "60000",
+  process.env.TALABAT_TUNE_STEP_UP_INTERVAL_MS || "60000",
   10
 );
 const TUNE_STEP_DOWN_GRC_DELTA = parseInt(
-  process.env.NOON_TUNE_STEP_DOWN_GRC_DELTA || "1",
+  process.env.TALABAT_TUNE_STEP_DOWN_GRC_DELTA || "1",
   10
 );
 const TUNE_STEP_DOWN_MRI_DELTA = parseInt(
-  process.env.NOON_TUNE_STEP_DOWN_MRI_DELTA || "50",
+  process.env.TALABAT_TUNE_STEP_DOWN_MRI_DELTA || "75",
   10
 );
 const TUNE_STEP_UP_GRC_DELTA = parseInt(
-  process.env.NOON_TUNE_STEP_UP_GRC_DELTA || "1",
+  process.env.TALABAT_TUNE_STEP_UP_GRC_DELTA || "1",
   10
 );
 const TUNE_STEP_UP_MRI_DELTA = parseInt(
-  process.env.NOON_TUNE_STEP_UP_MRI_DELTA || "25",
+  process.env.TALABAT_TUNE_STEP_UP_MRI_DELTA || "35",
   10
 );
 let lastTuneUpAt = 0;
@@ -165,7 +178,7 @@ async function withGlobalRequestGate(fn, logger) {
 }
 
 /**
- * Fetch Noon campaign details, handle 401 by refreshing cookies via Lambda.
+ * Fetch Talabat campaign details, handle 401 by refreshing cookies via Lambda.
 
  * @param {Array<Object>} cookieArray - Array of cookie objects for Noon stores
  * @param {Object} brandLookup - Brand ID to name mapping
@@ -178,11 +191,11 @@ const MAX_TRIES = 2;
 
 // Concurrency controls (configurable via env)
 const CAMPAIGN_CONCURRENCY = parseInt(
-  process.env.NOON_CONCURRENCY_CAMPAIGNS || "2",
+  process.env.TALABAT_CONCURRENCY_CAMPAIGNS || "2",
   10
 );
 const FETCH_CONCURRENCY = parseInt(
-  process.env.NOON_CONCURRENCY_FETCHES || "2",
+  process.env.TALABAT_CONCURRENCY_FETCHES || "2",
   10
 );
 
@@ -233,20 +246,20 @@ async function processSingleToken(
   let success = true;
   // Sequential-mode delays (ms). Only used when options.sequential === true
   const SEQ_FETCH_DELAY_MS = parseInt(
-    process.env.NOON_SEQ_FETCH_DELAY_MS || "0",
+    process.env.TALABAT_SEQ_FETCH_DELAY_MS || "0",
     10
   );
   const SEQ_CAMPAIGN_DELAY_MS = parseInt(
-    process.env.NOON_SEQ_CAMPAIGN_DELAY_MS || "0",
+    process.env.TALABAT_SEQ_CAMPAIGN_DELAY_MS || "0",
     10
   );
 
   const output = {
-    allCampaignsArr: [],
+    campaigns: [],
     products: [],
-    targeting: [],
-    placement: [],
-    sources: [],
+    categories: [],
+    keywords: [],
+    slots: [],
   };
 
   // Resume support: options.resumeFrom = { adType: string, index: number }
@@ -269,7 +282,7 @@ async function processSingleToken(
     const [config] = adTypeObj[adType];
 
     logger(
-      `Processing ad type: ${adType}${date ? ` [date=${date}]` : ""}`,
+      `Processing ad type: ${adType}${date ? ` [date=${fmtDate(date)}]` : ""}`,
       "debug"
     );
     if (process.env.DEBUG === "true") {
@@ -324,7 +337,7 @@ async function processSingleToken(
               ra && !Number.isNaN(Number(ra)) ? Number(ra) * 1000 : 500;
             logger(
               `[429/backoff] Campaign list for ${adType} (token=${cookieKey})${
-                date ? ` [date=${date}]` : ""
+                date ? ` [date=${fmtDate(date)}]` : ""
               }; sleeping ${delay}ms`,
               "warn"
             );
@@ -348,16 +361,24 @@ async function processSingleToken(
       ? config.dataExtractor(campaigns)
       : campaigns?.unformattedData || [];
 
+    const createdOn = typeof date === "string" ? date : date?.start_date;
     const formattedCampaigns = config.format
       ? campaignData.map((row) =>
-          config.format(row, brandLookup, cookieKey, existingData, adType, date)
+          config.format(
+            row,
+            brandLookup,
+            cookieKey,
+            existingData,
+            adType,
+            createdOn
+          )
         )
       : campaignData;
 
-    output.allCampaignsArr.push(...formattedCampaigns);
+    output.campaigns.push(...formattedCampaigns);
     logger(
       `Processing ${formattedCampaigns.length} campaigns${
-        date ? ` [date=${date}]` : ""
+        date ? ` [date=${fmtDate(date)}]` : ""
       } [adType=${adType}]`,
       "info"
     );
@@ -384,8 +405,12 @@ async function processSingleToken(
       lastCampaignIndex = index;
       logger(
         `Processing campaign ${index + 1}/${formattedCampaigns.length}: ${
-          campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "unknown"
-        }${date ? ` [date=${date}]` : ""} [adType=${adType}]`,
+          campaign.campaign_name ||
+          campaign.campaign_id ||
+          campaign.campaignName ||
+          campaign.campaignCode ||
+          "unknown"
+        }${date ? ` [date=${fmtDate(date)}]` : ""} [adType=${adType}]`,
         "info"
       );
 
@@ -395,7 +420,7 @@ async function processSingleToken(
           return { ok: false, err: new Error("ABORT_401"), fatal401: false };
         logger(
           `Fetching ${fetchConf.type} data${
-            date ? ` [date=${date}]` : ""
+            date ? ` [date=${fmtDate(date)}]` : ""
           } [adType=${adType}]`,
           "debug"
         );
@@ -457,9 +482,13 @@ async function processSingleToken(
               }
               logger(
                 `[RETRY] Attempt ${attempt + 1} failed for ${fetchConf.type}${
-                  date ? ` on ${date}` : ""
+                  date ? ` on ${fmtDate(date)}` : ""
                 } (campaign=${
-                  campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "n/a"
+                  campaign.campaign_name ||
+                  campaign.campaign_id ||
+                  campaign.campaignName ||
+                  campaign.campaignCode ||
+                  "n/a"
                 }): ${err.message} (sleep ${delay}ms)`,
                 "warn"
               );
@@ -471,9 +500,13 @@ async function processSingleToken(
             // Final failure after retries
             logger(
               `[ERROR] Final error fetching ${fetchConf.type}${
-                date ? ` on ${date}` : ""
+                date ? ` on ${fmtDate(date)}` : ""
               } (campaign=${
-                campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "n/a"
+                campaign.campaign_name ||
+                campaign.campaign_id ||
+                campaign.campaignName ||
+                campaign.campaignCode ||
+                "n/a"
               }) after ${attempt} retries: ${err.message}`,
               "error"
             );
@@ -546,7 +579,11 @@ async function processSingleToken(
 
           logger(
             `Attached ${fetchConf.attachToCampaign} to campaign ${
-              campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "unknown"
+              campaign.campaign_name ||
+              campaign.campaign_id ||
+              campaign.campaignName ||
+              campaign.campaignCode ||
+              "unknown"
             }`,
             "debug"
           );
@@ -570,7 +607,11 @@ async function processSingleToken(
           pageNumber = options.resumeFrom.page;
           logger(
             `Resuming ${fetchConf.type} at page ${pageNumber} for campaign ${
-              campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "unknown"
+              campaign.campaign_name ||
+              campaign.campaign_id ||
+              campaign.campaignName ||
+              campaign.campaignCode ||
+              "unknown"
             } [adType=${adType}]`,
             "info"
           );
@@ -634,9 +675,13 @@ async function processSingleToken(
                 }
                 logger(
                   `[RETRY] Attempt ${attempt + 1} failed for ${fetchConf.type}${
-                    date ? ` on ${date}` : ""
+                    date ? ` on ${fmtDate(date)}` : ""
                   } (campaign=${
-                    campaign.campaign_name || campaign.campaign_id || (campaign.campaignName || campaign.campaignCode) || "n/a"
+                    campaign.campaign_name ||
+                    campaign.campaign_id ||
+                    campaign.campaignName ||
+                    campaign.campaignCode ||
+                    "n/a"
                   }) page=${p}, size=${desiredPageSize}: ${
                     err.message
                   } (sleep ${delay}ms)`,
@@ -695,9 +740,13 @@ async function processSingleToken(
                 `Detected pagination for ${
                   fetchConf.type
                 }: totalCount=${totalCountExpected}, pageSize=${actualPageSize}, totalPages=${totalPages}${
-                  date ? ` [date=${date}]` : ""
+                  date ? ` [date=${fmtDate(date)}]` : ""
                 } [adType=${adType}] (campaign=${
-                  campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "unknown"
+                  campaign.campaign_name ||
+                  campaign.campaign_id ||
+                  campaign.campaignName ||
+                  campaign.campaignCode ||
+                  "unknown"
                 })`,
                 "debug"
               );
@@ -762,7 +811,11 @@ async function processSingleToken(
             `Capping ${
               fetchConf.type
             } accumulated rows by ${extra} to match totalCount=${totalCountExpected} (campaign=${
-              campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "unknown"
+              campaign.campaign_name ||
+              campaign.campaign_id ||
+              campaign.campaignName ||
+              campaign.campaignCode ||
+              "unknown"
             })`,
             "debug"
           );
@@ -773,8 +826,10 @@ async function processSingleToken(
 
         // Format and push accumulated rows
         const rowsWithCampaign = ACC.map((row) => ({ ...row, campaign }));
+        const createdOnChild =
+          typeof date === "string" ? date : date?.start_date;
         const formattedRows = fetchConf.format
-          ? rowsWithCampaign.map((row) => fetchConf.format(row, date))
+          ? rowsWithCampaign.map((row) => fetchConf.format(row, createdOnChild))
           : rowsWithCampaign;
 
         if (fetchConf.outputKey) {
@@ -783,12 +838,16 @@ async function processSingleToken(
           }
           output[fetchConf.outputKey].push(...formattedRows);
           const campId =
-            campaign.campaign_name || campaign.campaign_id || campaign.campaignName || campaign.campaignCode || "unknown";
+            campaign.campaign_name ||
+            campaign.campaign_id ||
+            campaign.campaignName ||
+            campaign.campaignCode ||
+            "unknown";
           logger(
             `Added ${formattedRows.length} rows to ${
               fetchConf.outputKey
             } (campaign=${campId}) [type=${fetchConf.type}]${
-              date ? ` [date=${date}]` : ""
+              date ? ` [date=${fmtDate(date)}]` : ""
             }`,
             "debug"
           );
@@ -867,11 +926,11 @@ async function processSingleToken(
   }
 
   const summary = {
-    campaigns: output.allCampaignsArr.length,
+    campaigns: output.campaigns.length,
     products: output.products.length,
-    targeting: output.targeting.length,
-    sources: output.sources.length,
-    placement: output.placement.length,
+    categories: output.categories.length,
+    keywords: output.keywords.length,
+    slots: output.slots.length,
     success,
     had401Token,
   };
@@ -943,11 +1002,11 @@ async function handleTokenLoop(
 
       try {
         const {
-          allCampaignsArr: campaigns = [],
+          campaigns = [],
           products = [],
-          targeting = [],
-          placement = [],
-          sources = [],
+          categories = [],
+          keywords = [],
+          slots = [],
           had401Token = false,
           success = false,
           error = null,
@@ -965,11 +1024,11 @@ async function handleTokenLoop(
 
         results.push({
           store: cookieKey,
-          campaigns, // campaigns already have negative targeting inside
+          campaigns,
           products,
-          targeting,
-          placement,
-          sources,
+          categories,
+          keywords,
+          slots,
         });
 
         const attemptNo = cookiesTried + 1;
@@ -1121,41 +1180,62 @@ async function getCampaignsDetails(
   logger(`\n=== Process Completed ===`, "info");
   logger(
     `Total Tokens Processed: ${output.totalProcessed}${
-      date ? ` [date=${date}]` : ""
+      date
+        ? ` [date=${typeof date === "string" ? date : JSON.stringify(date)}]`
+        : ""
     }`,
     "info"
   );
   logger(
     `Successful: ${output.successfulStores.length}${
-      date ? ` [date=${date}]` : ""
+      date
+        ? ` [date=${typeof date === "string" ? date : JSON.stringify(date)}]`
+        : ""
     }`,
     "info"
   );
   logger(
-    `Failed: ${output.failedStores.length}${date ? ` [date=${date}]` : ""}`,
+    `Failed: ${output.failedStores.length}${
+      date
+        ? ` [date=${typeof date === "string" ? date : JSON.stringify(date)}]`
+        : ""
+    }`,
     output.failedStores.length > 0 ? "warn" : "info"
   );
   logger(
     `Total Campaigns Fetched: ${results.reduce(
       (sum, r) => sum + (r.campaigns?.length || 0),
       0
-    )}${date ? ` [date=${date}]` : ""}`,
+    )}${
+      date
+        ? ` [date=${typeof date === "string" ? date : JSON.stringify(date)}]`
+        : ""
+    }`,
     "info"
   );
   logger(
     `Duration: ${(duration / 1000).toFixed(2)} seconds${
-      date ? ` [date=${date}]` : ""
+      date
+        ? ` [date=${typeof date === "string" ? date : JSON.stringify(date)}]`
+        : ""
     }`,
     "info"
   );
-  logger(`End Time: ${processEnd}${date ? ` [date=${date}]` : ""}`, "debug");
+  logger(
+    `End Time: ${processEnd}${
+      date
+        ? ` [date=${typeof date === "string" ? date : JSON.stringify(date)}]`
+        : ""
+    }`,
+    "debug"
+  );
 
   if (output.failedStores.length > 0) {
     logger(`Failed tokens: ${output.failedStores.join(", ")}`, "warn");
   }
 
   return {
-    results, // [{ store, campaigns, products, targeting, placement ,sources}]
+    results, // [{ store, campaigns, products, keywords, sub-category ,sources}]
     ...output,
   };
 }

@@ -3,6 +3,7 @@ const { config } = require("../config/index");
 const axiosInstance = require("../utils/axiosInstance");
 const { saveResponseToFile } = require("../utils/debugLog");
 const apiDebug = config.apiDebug;
+
 /**
  * Makes a POST request to the Noon API with retry logic.
  * @param {object} axiosInstance - The axios instance to use.
@@ -26,6 +27,35 @@ async function postWithRetry(
 ) {
   return retryAsync(
     () => axiosInstance.post(url, payload, options),
+    retries,
+    delay,
+    isSuccess,
+    logPrefix,
+    logger
+  );
+}
+
+/**
+ * Makes a GET request to the Noon API with retry logic.
+ * @param {object} axiosInstance - The axios instance to use.
+ * @param {string} url - The full Noon API endpoint URL.
+ * @param {object} options - Additional axios options (e.g., { cookieString, headers }).
+ * @param {function} [isSuccess] - Optional function to determine if response is successful.
+ * @param {number} [retries=3] - Number of retries.
+ * @param {number} [delay=2000] - Delay between retries in ms.
+ * @returns {Promise<object>} The axios response.
+ */
+async function getWithRetry(
+  url,
+  options,
+  isSuccess = (resp) => resp && resp.status >= 200 && resp.status < 300,
+  retries = 2,
+  delay = 2000,
+  logPrefix = "[RETRY]",
+  logger
+) {
+  return retryAsync(
+    () => axiosInstance.get(url, options),
     retries,
     delay,
     isSuccess,
@@ -62,21 +92,42 @@ async function fetchCampaignList(
     ? cfg.subUrl
     : `${(baseUrl || "").replace(/\/$/, "")}/${entityCode}/${cfg.subUrl}`;
 
-  const resp = await postWithRetry(
-    targetUrl,
-    data,
-    {
-      cookieString,
-      headers: { ...customHeaders },
-      logger,
-      params,
-    },
-    null,
-    3,
-    2000,
-    `[RETRY][CampaignList]${dateRange ? `[range=${dateRange.start_date}..${dateRange.end_date}]` : ""}`,
-    logger
-  );
+  const method = (cfg.method || "POST").toUpperCase();
+  let resp;
+
+  const requestOptions = {
+    cookieString,
+    headers: { ...customHeaders },
+    logger,
+    params,
+  };
+
+  const retryLogPrefix = `[RETRY][CampaignList]${
+    dateRange ? `[range=${dateRange.start_date}..${dateRange.end_date}]` : ""
+  }`;
+
+  if (method === "GET") {
+    resp = await getWithRetry(
+      targetUrl,
+      requestOptions,
+      null,
+      3,
+      2000,
+      retryLogPrefix,
+      logger
+    );
+  } else {
+    resp = await postWithRetry(
+      targetUrl,
+      data,
+      requestOptions,
+      null,
+      3,
+      2000,
+      retryLogPrefix,
+      logger
+    );
+  }
 
   const campaigns = resp.data || [];
 
@@ -140,9 +191,9 @@ async function fetchOtherFetchData(
     2000,
     `[RETRY][OtherFetch][type=${fetchConf.type || "Unknown"}][campaign=${
       campaign.campaignCode || campaign.campaign_id || "n/a"
-    }]${dateRange ? `[range=${dateRange.start_date}..${dateRange.end_date}]` : ""}${
-      pageNumber != null ? `[page=${pageNumber}]` : ""
-    }`,
+    }]${
+      dateRange ? `[range=${dateRange.start_date}..${dateRange.end_date}]` : ""
+    }${pageNumber != null ? `[page=${pageNumber}]` : ""}`,
     logger
   );
 
@@ -151,6 +202,7 @@ async function fetchOtherFetchData(
 
 module.exports = {
   postWithRetry,
+  getWithRetry,
   fetchCampaignList,
   fetchOtherFetchData,
 };

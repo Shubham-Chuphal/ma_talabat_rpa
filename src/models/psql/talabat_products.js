@@ -16,7 +16,9 @@ module.exports = (sequelize) => {
       product_id: {
         type: DataTypes.STRING,
       },
-
+      status: {
+        type: DataTypes.STRING,
+      },
       image: {
         type: DataTypes.TEXT,
       },

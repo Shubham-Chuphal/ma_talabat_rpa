@@ -97,18 +97,30 @@ async function uploadCsvToS3(csvContent, dbName, modelName) {
   // S3 Path: reports/{dbName}/{date}/{modelName}_{time}.csv
   const s3Key = `reports/${dbName}/${date}/${modelName}_${time}.csv`;
 
-  const upload = new Upload({
-    client: s3,
-    params: {
-      Bucket: "talabat-data",
-      Key: s3Key,
-      Body: csvContent,
-      ContentType: "text/csv",
-    },
-  });
+  // Resolve bucket from env with sensible fallback
+  const bucketName = process.env.TALABAT_S3_BUCKET || "talabat-data";
 
-  await upload.done();
-  console.log(`Uploaded ${modelName} CSV to s3://${"talabat_data"}/${s3Key}`);
+  try {
+    const upload = new Upload({
+      client: s3,
+      params: {
+        Bucket: bucketName,
+        Key: s3Key,
+        Body: csvContent,
+        ContentType: "text/csv",
+      },
+    });
+
+    await upload.done();
+    const msg = `Uploaded ${modelName} CSV to s3://${bucketName}/${s3Key}`;
+    console.log(msg);
+    writeDebugLog(`[DEBUG_ATTRIBUTION.TXT] ${msg}`, "debug_attribution.txt");
+  } catch (err) {
+    const emsg = `[Talabat] [ERROR] ${err.name || "S3Error"}: ${err.message}`;
+    console.error(emsg);
+    writeDebugLog(`[DEBUG_ATTRIBUTION.TXT] ${emsg}`, "debug_attribution.txt");
+    throw err;
+  }
 }
 
 module.exports = {
