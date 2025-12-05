@@ -81,7 +81,7 @@ async function loginTalabat(clientConfig) {
   const { EMAIL, PASSWORD, TALABAT_LOGIN_URL } = clientConfig;
 
   const browser = await chromium.launch({
-    headless: false,
+    headless: true,
     slowMo: 80,
   });
 
