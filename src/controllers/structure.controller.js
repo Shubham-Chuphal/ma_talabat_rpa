@@ -85,17 +85,11 @@ exports.campaignStructure = async (req, res) => {
       { baseUrl: talabatClient.baseUrl, entityCode: talabatClient.entityCode }
     );
 
-    console.log(
-      campaign_details?.results?.[0]?.keywords,
-      "<<< campaign_details"
-    );
-
     // !------------------------------------------------
     let campaignArray = [];
     await campaign_details?.results[0]?.campaigns?.map((campaign) => {
       campaignArray.push(campaign.campaign_id);
     });
-
     if (campaignArray.length > 0) {
       logger("Fetching custom data for each campaign...");
 
@@ -137,7 +131,7 @@ exports.campaignStructure = async (req, res) => {
 
       // --- Data Merging Logic ---
       const campaignDetailsMap = new Map();
-
+      console.log("<<<<<<<<<<<<<<<<<<<<<<<<1");
       // 1. Build a comprehensive lookup map from the detailed campaign data
       const detailedCampaigns = allCustomDataResults
         .flatMap((result) => result.results.flatMap((r) => r.campaigns || []))
@@ -163,6 +157,7 @@ exports.campaignStructure = async (req, res) => {
         }
       }
 
+      console.log("<<<<<<<<<<<<<<<<<<<2");
       // 2. Enrich the original campaigns list
       const originalCampaigns = campaign_details?.results?.[0]?.campaigns || [];
       const mergedCampaigns = originalCampaigns.map((campaign) => {
@@ -177,12 +172,17 @@ exports.campaignStructure = async (req, res) => {
         return campaign;
       });
 
+      console.log("<<<<<<<<, GTETEETE");
       // 3. Enrich the original keywords list
       const originalKeywords = campaign_details?.results?.[0]?.keywords || [];
       const mergedKeywords = originalKeywords.map((keyword) => {
         const campaignBids = campaignDetailsMap.get(keyword.campaign_id);
+
+        console.log(campaignBids, "<---------campaignBids");
+        const slot = campaignBids.slots.get(keyword.keyword);
         if (campaignBids) {
           const customBid = campaignBids.custom_bids.get(keyword.keyword);
+
           const bidToApply = customBid || null;
           return {
             ...keyword,

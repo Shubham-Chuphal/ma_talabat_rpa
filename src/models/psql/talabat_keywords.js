@@ -37,6 +37,9 @@ module.exports = (sequelize) => {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
+      slot: {
+        type: DataTypes.JSONB,
+      },
     },
     {
       tableName: "talabat_keywords",
