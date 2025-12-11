@@ -93,6 +93,9 @@ exports.campaignStructure = async (req, res) => {
     if (campaignArray.length > 0) {
       logger("Fetching custom data for each campaign...");
 
+      // ! remove this line
+      // campaignArray = campaign_details?.results?.[0]?.campaigns?.slice(0, 2);
+
       // Make a separate API call for each campaign ID to ensure all are processed.
       const customDataPromises = campaignArray.map((campaignId) => {
         const singleCampaignConfig = [
@@ -128,10 +131,12 @@ exports.campaignStructure = async (req, res) => {
 
       // Wait for all API calls to complete
       const allCustomDataResults = await Promise.all(customDataPromises);
-
+      // console.log(
+      //   allCustomDataResults,
+      //   "<<<<<<<<<<<<<<<<<<<<<<<<<< customDataPromises"
+      // );
       // --- Data Merging Logic ---
       const campaignDetailsMap = new Map();
-      console.log("<<<<<<<<<<<<<<<<<<<<<<<<1");
       // 1. Build a comprehensive lookup map from the detailed campaign data
       const detailedCampaigns = allCustomDataResults
         .flatMap((result) => result.results.flatMap((r) => r.campaigns || []))
@@ -157,7 +162,6 @@ exports.campaignStructure = async (req, res) => {
         }
       }
 
-      console.log("<<<<<<<<<<<<<<<<<<<2");
       // 2. Enrich the original campaigns list
       const originalCampaigns = campaign_details?.results?.[0]?.campaigns || [];
       const mergedCampaigns = originalCampaigns.map((campaign) => {
@@ -169,26 +173,31 @@ exports.campaignStructure = async (req, res) => {
             daily_budget: extraData.daily_budget,
           };
         }
+
+        console.log(campaign, "<<<<<<< CAMPAIGN");
         return campaign;
       });
+      return;
 
-      console.log("<<<<<<<<, GTETEETE");
+      console.log(mergedCampaigns, "<<<<<<< mergedCampaigns");
       // 3. Enrich the original keywords list
       const originalKeywords = campaign_details?.results?.[0]?.keywords || [];
       const mergedKeywords = originalKeywords.map((keyword) => {
-        const campaignBids = campaignDetailsMap.get(keyword.campaign_id);
+        const campaignBids = campaignDetailsMap.get(keyword?.campaign_id);
+        console.log(campaignBids, "<<<<<<< campaign Bids");
+        if (!campaignBids || !campaignBids.slots) {
+          return keyword; // Return the original keyword if no campaign bids or slots exist
+        }
 
         console.log(campaignBids, "<---------campaignBids");
         const slot = campaignBids.slots.get(keyword.keyword);
-        if (campaignBids) {
-          const customBid = campaignBids.custom_bids.get(keyword.keyword);
+        const customBid = campaignBids.custom_bids?.get(keyword.keyword);
+        const bidToApply = customBid || null;
 
-          const bidToApply = customBid || null;
-          return {
-            ...keyword,
-            bid: bidToApply,
-          };
-        }
+        return {
+          ...keyword,
+          bid: bidToApply,
+        };
         return keyword;
       });
 
@@ -200,6 +209,7 @@ exports.campaignStructure = async (req, res) => {
       // --- End of Data Merging Logic ---
     }
 
+    return;
     if (campaign_details) {
       const entityInsertMap = getEntityInsertMapFromConfig(STRUCTURE_CONFIG);
 
