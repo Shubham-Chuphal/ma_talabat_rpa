@@ -99,6 +99,7 @@ function formatKeywordRow(row) {
     formatted: true,
     entityType: "Keyword",
     bid: campaign.bid || null,
+    slot: campaign.slot || null,
   };
 }
 

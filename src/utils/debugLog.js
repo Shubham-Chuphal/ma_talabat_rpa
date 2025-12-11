@@ -25,7 +25,7 @@ function writeDebugLog(msg, logFile = "debug_attribution.txt", mode = "a") {
 function createLogger(defaultFileName = "debug_campaign_details.txt") {
   return (msg, level = "info", fileName = defaultFileName) => {
     const timestamp = new Date().toISOString();
-    const logMsg = `[${timestamp}] [${level.toUpperCase()}] [Talabat] ${msg}`;
+    const logMsg = `[${timestamp}] [${level?.toUpperCase()}] [Talabat] ${msg}`;
 
     // Write to log file
     writeDebugLog(logMsg, fileName);
