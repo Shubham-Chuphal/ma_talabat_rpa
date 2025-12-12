@@ -30,7 +30,6 @@ app.use(limiter);
 // Attach Talabat client config globally (reads clientId and sets req.talabatClient)
 app.use(talabatClientConfig);
 
-console.log("M<<<<<<<,");
 app.use("/api/v1", v1Routes);
 
 // 404 and error handlers

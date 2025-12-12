@@ -97,19 +97,19 @@ const STRUCTURE_CONFIG = [
       },
     ],
   },
-  {
-    "Custom Data": [
-      {
-        // This subUrl will be overridden in the controller, but we keep the block here.
-        subUrl: "",
-        method: "GET",
-        getPayload: () => ({}),
-        model: "talabat_campaigns",
-        dataExtractor: (data) => data || [],
-        format: (row) => row,
-      },
-    ],
-  },
+  // {
+  //   "Custom Data": [
+  //     {
+  //       // This subUrl will be overridden in the controller, but we keep the block here.
+  //       subUrl: "",
+  //       method: "GET",
+  //       getPayload: () => ({}),
+  //       model: "talabat_campaigns",
+  //       dataExtractor: (data) => data || [],
+  //       format: (row) => row,
+  //     },
+  //   ],
+  // },
   {
     "Display Ads": [
       {
@@ -521,9 +521,11 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ amount, campaign_id, pricing }) =>
-            `Budget updated to ${amount || pricing?.budget?.total} for campaign ID ${campaign_id}`,
+            `Budget updated to ${
+              amount || pricing?.budget?.total
+            } for campaign ID ${campaign_id}`,
         },
-         daily_budget: {
+        daily_budget: {
           buildPayload: (payload) => {
             // If payload has the full campaign structure (from transformCampaignForPut), return as-is
             if (payload.name && payload.promotion && payload.pricing) {
@@ -541,9 +543,11 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ amount, campaign_id, pricing }) =>
-            `Daily budget updated to ${amount || pricing?.budget?.daily} for campaign ID ${campaign_id}`,
+            `Daily budget updated to ${
+              amount || pricing?.budget?.daily
+            } for campaign ID ${campaign_id}`,
         },
-         cpm_bid: {
+        cpm_bid: {
           buildPayload: (payload) => {
             // If payload has the full campaign structure (from transformCampaignForPut), return as-is
             if (payload.name && payload.promotion && payload.pricing) {
@@ -561,15 +565,25 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ amount, campaign_id, pricing }) =>
-            `CPM Bid updated to ${amount || pricing?.default_bid} for campaign ID ${campaign_id}`,
+            `CPM Bid updated to ${
+              amount || pricing?.default_bid
+            } for campaign ID ${campaign_id}`,
         },
 
         status: {
           buildPayload: ({ status }) => ({
-            status: status ? status : null
+            status: status ? status : null,
           }),
           message: ({ status, campaign_id }) =>
-            `Campaign ${campaign_id} is now ${status === "active" ? "Active" : status === "paused" ? "Paused" : status === "cancelled" ? "Cancelled" : status}`,
+            `Campaign ${campaign_id} is now ${
+              status === "active"
+                ? "Active"
+                : status === "paused"
+                ? "Paused"
+                : status === "cancelled"
+                ? "Cancelled"
+                : status
+            }`,
         },
 
         change_date: {
@@ -592,7 +606,9 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ campaign_id, end_at }) =>
-            `Campaign dates updated successfully for campaign ID ${campaign_id}${end_at ? ` (end date: ${end_at})` : ' (always on)'}`,
+            `Campaign dates updated successfully for campaign ID ${campaign_id}${
+              end_at ? ` (end date: ${end_at})` : " (always on)"
+            }`,
         },
 
         update_name: {
@@ -607,9 +623,11 @@ const ACTION_CONFIG = {
             };
           },
           message: ({ campaignName, campaign_id, name }) =>
-            `Campaign name updated to "${name || campaignName}" for campaign ID ${campaign_id}`,
+            `Campaign name updated to "${
+              name || campaignName
+            }" for campaign ID ${campaign_id}`,
         },
-         day_parting: {
+        day_parting: {
           buildPayload: (payload) => {
             // If payload has the full campaign structure (from transformCampaignForPut), return as-is
             if (payload.name && payload.promotion && payload.pricing) {
@@ -623,7 +641,6 @@ const ACTION_CONFIG = {
           message: ({ campaignName, campaign_id, targeting }) =>
             // `Day parting action updated to "${targeting.schedules || campaignName}" for campaign ID ${campaign_id}`,
             `Day parting action updated for campaign ID ${campaign_id}`,
-
         },
       },
 
@@ -656,7 +673,7 @@ const ACTION_CONFIG = {
               sku: payload.sku,
             };
           },
-          message: ({  productsList }) => {
+          message: ({ productsList }) => {
             return `The updated products list: "${productsList}"`;
           },
         },
@@ -697,7 +714,7 @@ const ACTION_CONFIG = {
               targetValue: payload.targetValue,
             };
           },
-          message: ({ campaign_id, keywordsList }) => {   
+          message: ({ campaign_id, keywordsList }) => {
             return `The updated keyword list: "${keywordsList}" for campaign ${campaign_id}`;
           },
         },

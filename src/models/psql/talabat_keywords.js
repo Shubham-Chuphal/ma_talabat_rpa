@@ -40,6 +40,9 @@ module.exports = (sequelize) => {
       slot: {
         type: DataTypes.JSONB,
       },
+      bid: {
+        type: DataTypes.STRING,
+      },
     },
     {
       tableName: "talabat_keywords",
