@@ -321,7 +321,7 @@ async function processSingleToken(
             success = false;
             break;
           }
-          if (err.response?.status === 401) {
+          if (err.response?.status === 401 || err.response?.status === 403) {
             logger(`[401] Unauthorized - Token expired for ${adType}`, "error");
             return {
               ...output,
@@ -330,6 +330,7 @@ async function processSingleToken(
               success: false,
             };
           }
+
           if (err.response?.status === 429 && attempt < maxRetries) {
             recent429At = Date.now();
             const ra = err.response?.headers?.["retry-after"];

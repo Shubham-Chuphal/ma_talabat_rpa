@@ -146,13 +146,11 @@ async function loginTalabat(clientConfig) {
       cookies,
       bearerToken,
     };
-
   } catch (err) {
     console.error("loginTalabat error:", err);
     return { success: false, message: err.message };
   }
 }
-
 
 /**
  * Fetch fresh Talabat cookies by logging in with Playwright.
@@ -166,12 +164,11 @@ async function fetchTalabatCookies(clientId) {
     if (!clientId) {
       throw new Error("clientId is required");
     }
-        // Load client configuration
+    // Load client configuration
     const clientConfig = loadClientConfig(clientId);
     const { commonDB: pgCommonDB } = await getConnectedDatabases(clientId);
     const brands = await getBrandsByClientId(clientId, pgCommonDB);
     writeDebugLog(`Fetched ${brands.length} brands`, LOG_FILE);
-
 
     if (!clientConfig.EMAIL || !clientConfig.PASSWORD) {
       throw new Error("Email and Password are not configured for this client");
@@ -221,7 +218,7 @@ async function fetchTalabatCookies(clientId) {
             [brands[0]?.brand_id]: result.bearerToken,
           },
         },
-        { where: { client_id: clientId } }
+        { where: { client_id: clientId, platform_id: "10" } }
       );
       writeDebugLog(
         `Updated DB with cookies for client_id: ${clientId}`,
@@ -241,4 +238,8 @@ async function fetchTalabatCookies(clientId) {
   }
 }
 
-module.exports = { fetchTalabatTokenArray, fetchTalabatCookies, loadClientConfig };
+module.exports = {
+  fetchTalabatTokenArray,
+  fetchTalabatCookies,
+  loadClientConfig,
+};

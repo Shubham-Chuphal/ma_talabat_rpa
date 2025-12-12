@@ -29,6 +29,7 @@ const initializeDB = async ({
     ...(ssl && {
       dialectOptions: {
         ssl: { require: true, rejectUnauthorized: false },
+        // ssl: false,
       },
     }),
   });
@@ -70,7 +71,7 @@ const initializeDB = async ({
 
 async function connectCommon() {
   let commonConfig;
-  
+
   if (config.env === "development") {
     commonConfig = {
       pgsql_url: config.pgsql.host,
@@ -96,7 +97,8 @@ async function connectCommon() {
       username: commonConfig.pgsql_user,
       password: String(commonConfig.pgsql_password || ""),
       modelDir: path.join(__dirname, "../models/common"),
-      ssl: false,
+      // ssl: false
+      ssl: true,
     });
   }
 
@@ -143,7 +145,7 @@ async function connectClient(dbName) {
         username: dbConfig.pgsql_user,
         password: String(dbConfig.pgsql_password || ""),
         modelDir: path.join(__dirname, "../models/psql"),
-        ssl: false,
+        ssl: true,
       });
     } else {
       connections.postgres = connection[key];
