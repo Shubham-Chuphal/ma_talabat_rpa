@@ -66,11 +66,11 @@ const campaignController = {
           }
           const typeUrl = actionConfig.typeSuffixUrl[typeKey]?.["campaign"];
           // console.log("typeUrl:", typeUrl);
-          
+
           // Replace :campaign_id placeholder in URL if present
           let actionUrlSuffix = typeUrl?.[action]?.url || "";
           actionUrlSuffix = actionUrlSuffix.replace(":campaign_id", campaign_id);
-          
+
           const action_url = getApiUrl(actionUrlSuffix, clientId);
           const details_url = getApiUrl(typeUrl?.campaign_details, clientId);
           const negative_list_url = getApiUrl(typeUrl?.negative_keyword_list, clientId);
@@ -86,21 +86,27 @@ const campaignController = {
 
           // Step 1: Pre-fetch campaign details (optional)
           let campaignDetails = {};
-          
+
           // Actions that require GET campaign details first
-          const requiresGetDetails = ["update_name", "budget", "change_date","daily_budget","cpm_bid","day_parting"];
-          
+          const requiresGetDetails = ["update_name", "budget", "change_date", "daily_budget", "cpm_bid", "day_parting"];
+
           if (requiresGetDetails.includes(action)) {
             // Fetch full campaign details using GET
             const getDetailsUrl = typeUrl?.campaign_details?.url?.replace(":campaign_id", campaign_id);
             const fullDetailsUrl = getApiUrl(getDetailsUrl, clientId);
-            
+
             campaignDetails = await requestWithCookieRenewal(
               fetchCampaignDetails,
               [fullDetailsUrl, campaign_id, "GET"], // Pass method as third argument
               { tokenMap, storeKey, clientId }
             );
-          } 
+          }
+
+          if (campaignDetails?.data?.status === "cancelled") {
+            throw new Error(
+              "Campaign is already cancelled. Can't perform the action."
+            );
+          }
 
           // Step 2: Prepare input for payload
           const inputData = preparePayloadInput(
@@ -128,7 +134,7 @@ const campaignController = {
           // Step 4: Generate payload
           const payload = payloadFn?.buildPayload(inputData);
           // console.log("payload:,", payload);
-          
+
           // Step 5: Call API
           const httpMethod = typeUrl?.[action]?.method || "POST";
           await actionApiCall(action_url, payload, {
@@ -144,9 +150,9 @@ const campaignController = {
             success: true,
             message: payloadFn?.message
               ? payloadFn.message({
-                  ...inputData,
-                  campaign_id,
-                })
+                ...inputData,
+                campaign_id,
+              })
               : `Action "${action}" completed for campaign ID ${campaign_id}`,
             action,
             value,
@@ -169,7 +175,7 @@ const campaignController = {
               value: campaign.value,
               error: err,
             }),
-            status:err.status,
+            status: err.status,
             action: campaign.action,
           });
         }
@@ -206,8 +212,8 @@ function getErrorMessage({
   const valStr = actionTypesWithoutValue.includes(action)
     ? action
     : Array.isArray(value)
-    ? value.join(", ")
-    : JSON.stringify(value);
+      ? value.join(", ")
+      : JSON.stringify(value);
 
   // Extract the best error message
   let errorMessage = "Unknown error";
@@ -222,11 +228,9 @@ function getErrorMessage({
     errorMessage = JSON.stringify(error);
   }
 
-  return `❌ Action "${action}" failed for campaign ID "${campaign_id}" (${
-    campaign_type || "unknown"
-  } campaign, account: ${
-    account_id || "N/A"
-  }).\nProvided value: ${valStr}.\nError: ${errorMessage}`;
+  return `❌ Action "${action}" failed for campaign ID "${campaign_id}" (${campaign_type || "unknown"
+    } campaign, account: ${account_id || "N/A"
+    }).\nProvided value: ${valStr}.\nError: ${errorMessage}`;
 }
 
 module.exports = campaignController;

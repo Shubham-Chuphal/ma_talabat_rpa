@@ -45,54 +45,55 @@ const preparePayloadInput = (
 
   switch (action) {
     case "budget":
-      // If we have full campaign details from GET, build complete payload
       if (campaignDetails.data) {
-        return transformCampaignForPut(campaignDetails.data, { budget: value });
+        return transformCampaignForPut(campaignDetails.data, {
+          budget: value,
+          status: "active", // ← force active
+        });
       }
-      // Legacy fallback
-      return {
-        code: campaign_id,
-        amount: value,
-      };
+      return { code: campaign_id, amount: value, status: "active" };
+
     case "daily_budget":
-      // If we have full campaign details from GET, build complete payload
       if (campaignDetails.data) {
-        return transformCampaignForPut(campaignDetails.data, { daily_budget: value });
+        return transformCampaignForPut(campaignDetails.data, {
+          daily_budget: value,
+          status: "active",
+        });
       }
-      // Legacy fallback
-      return {
-        code: campaign_id,
-        amount: value,
-      };
+      return { code: campaign_id, amount: value, status: "active" };
+
     case "cpm_bid":
-      // If we have full campaign details from GET, build complete payload
       if (campaignDetails.data) {
-        return transformCampaignForPut(campaignDetails.data, { cpm_bid: value });
+        return transformCampaignForPut(campaignDetails.data, {
+          cpm_bid: value,
+          status: "active",
+        });
       }
-      // Legacy fallback
-      return {
-        code: campaign_id,
-        amount: value,
-      };
+      return { code: campaign_id, amount: value, status: "active" };
 
     case "status":
+      // Only this action is allowed to modify status
       return {
         campaignCode: campaign_id,
         status: value,
       };
 
     case "change_date":
-      // If we have full campaign details from GET, build complete payload
       if (campaignDetails.data) {
-        return transformCampaignForPut(campaignDetails.data, { end_date: value });
+        return transformCampaignForPut(campaignDetails.data, {
+          end_date: value,
+          status: "active",
+        });
       }
-      // Legacy fallback
+
+      // legacy fallback
       const campaignName =
         campaignDetails.campaignName || campaign.campaignName || null;
       const dailyBudgetLocal =
         campaignDetails.dailyBudgetLocal ?? campaign.dailyBudgetLocal ?? null;
       const localStartDate =
         campaignDetails.localStartDate || campaign.localStartDate || null;
+
       return {
         campaignName,
         campaignCode: campaign_id,
@@ -101,96 +102,98 @@ const preparePayloadInput = (
           ? localStartDate.split("T")[0] + "T12:00:00+05:30"
           : null,
         localEndDate: value ? value + "T12:00:00+05:30" : null,
+        status: "active",
       };
 
     case "update_name":
-      // If we have full campaign details from GET, build complete payload
       if (campaignDetails.data) {
-        return transformCampaignForPut(campaignDetails.data, { name: value });
+        return transformCampaignForPut(campaignDetails.data, {
+          name: value,
+          status: "active",
+        });
       }
-      // Legacy fallback
+
+      // legacy fallback
       return {
         campaignName: value,
+        status: "active",
       };
 
-    // Add other cases if needed
     case "day_parting":
-      // If we have full campaign details from GET, build complete payload
       if (campaignDetails.data) {
-        return transformCampaignForPut(campaignDetails.data, { day_parting: value });
+        return transformCampaignForPut(campaignDetails.data, {
+          day_parting: value,
+          status: "active",
+        });
       }
-      // Legacy fallback
-      return {
-        code: campaign_id,
-        amount: value,
-      };
-      
+
+      return { code: campaign_id, amount: value, status: "active" };
+
     default:
       throw new Error(`Unhandled action ${action}`);
   }
 };
 
 /**
- * Transform GET campaign details response to PUT payload format
- * Merges existing campaign data with updates
+ * Transform GET campaign details response to PUT payload format.
+ * Ensures status defaults to "active" unless explicitly provided.
  */
 function transformCampaignForPut(campaignData, updates = {}) {
   const hasDailyBudgetUpdate = updates.daily_budget !== undefined;
 
+  // 🔥 Always force ACTIVE unless update explicitly sets it (status action)
+  const effectiveStatus = updates.status || "active";
+
   const payload = {
     name: updates.name || campaignData.name,
-    status: updates.status || campaignData.status,
+    status: effectiveStatus,
     start_at: updates.start_at || campaignData.start_at,
-     ...(() => {
-    if (updates.end_date === "-1") {
-      return {}; // omit end_at entirely
-    }
 
-    if (updates.end_date) {
-      return { end_at: `${updates.end_date}T23:59:59.999Z` };
-    }
+    ...(() => {
+      if (updates.end_date === "-1") return {};
+      if (updates.end_date) return { end_at: `${updates.end_date}T23:59:59.999Z` };
+      if (campaignData?.end_at) return { end_at: campaignData.end_at };
+      return {};
+    })(),
 
-    if (campaignData?.end_at) {
-      return { end_at: campaignData.end_at };
-    }
-
-    return {};
-  })(),
     promotion: {
       vendor_ids: campaignData.promotion?.vendor_ids || [],
       chain_ids: campaignData.promotion?.chain_ids || [],
       products: (campaignData.promotion?.products || []).map(product => ({
         master_code: product.master_code,
-        category_group_ids: product.category_group_ids || product.original_category_group_ids || [],
+        category_group_ids:
+          product.category_group_ids || product.original_category_group_ids || [],
       })),
       search: {
         keywords: campaignData.promotion?.search?.keywords || [],
       },
     },
+
     pricing: {
       budget: {
-        total: updates.budget !== undefined
-          ? updates.budget
-          : campaignData.pricing?.budget?.total,
+        total:
+          updates.budget !== undefined
+            ? updates.budget
+            : campaignData.pricing?.budget?.total,
 
-        // ✅ include daily if:
-        // - user is explicitly updating daily_budget, OR
-        // - campaign already has a daily budget field
         ...(hasDailyBudgetUpdate
           ? { daily: updates.daily_budget }
           : campaignData.pricing?.budget?.daily !== undefined
-            ? { daily: campaignData.pricing.budget.daily }
-            : {}),
+          ? { daily: campaignData.pricing.budget.daily }
+          : {}),
 
         consumed: campaignData.pricing?.budget?.consumed || 0,
       },
+
       default_bid:
         updates.cpm_bid !== undefined
           ? updates.cpm_bid
           : campaignData?.pricing?.default_bid || 0,
+
       is_free: campaignData?.pricing?.is_free || false,
       custom_bids: campaignData?.pricing?.custom_bids || [],
     },
+
     targeting: {
       schedules:
         updates.day_parting ||
@@ -203,6 +206,7 @@ function transformCampaignForPut(campaignData, updates = {}) {
       placements:
         campaignData.targeting?.placements?.map(({ ...rest }) => rest) || [],
     },
+
     creatives: campaignData?.creatives || [],
   };
 
